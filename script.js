@@ -3504,6 +3504,14 @@ const saveProfile = (e) => {
         // Si estamos en Explorar (por profesión):
         return String(p.profesion || '').trim().toLowerCase() === String(selectedCategory).trim().toLowerCase();
     }).map(p => {
+                    const scoreValue = Number(typeof calcularPromedio === 'function' ? calcularPromedio(p) : 0) || 0;
+                    const scoreTierClass = scoreValue >= 95
+                        ? 'card-score-badge--gold'
+                        : scoreValue >= 86
+                            ? 'card-score-badge--diamond'
+                            : scoreValue >= 75
+                                ? 'card-score-badge--fire'
+                                : '';
                     const profKey = p.profesion?.toUpperCase() || 'DEFAULT';
                     const neonClass = (typeof neonColors !== 'undefined' && neonColors[profKey]) ? neonColors[profKey] : { color: '#06b6d4', sombra: 'rgba(6,182,212,0.5)' };
                     return (
@@ -3568,9 +3576,12 @@ const saveProfile = (e) => {
                                     )}
                                 </div>
 
-                                <div className="card-score-badge absolute top-2 right-2 w-14 h-14 backdrop-blur-md rounded-full flex flex-col items-center justify-center border">
+                                <div className={`card-score-badge ${scoreTierClass} absolute top-2 right-2 w-14 h-14 backdrop-blur-md rounded-full flex flex-col items-center justify-center border`}>
+                                    {scoreValue >= 75 && scoreValue <= 85 && (
+                                        <span className="card-score-badge__fire-emoji" aria-hidden="true">🔥</span>
+                                    )}
                                     <span className="text-[9px] font-black text-[var(--metal-gold)] leading-none">G2</span>
-                                    <span className="text-lg font-black text-white">
+                                    <span className="card-score-badge__value text-lg font-black">
                                         {typeof calcularPromedio === 'function' ? calcularPromedio(p) : '8.5'}
                                     </span>
                                 </div>
