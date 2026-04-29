@@ -448,7 +448,40 @@
             );
         };
 
-        const renderGalleryWindow = ({ targetWindow, profileName, profession, photos, editingId, battlePhotoPrefs = {} }) => {
+        
+        const renderTallerProfileWindow = ({ targetWindow, profile = {}, ageLabel = 'No informada' }) => {
+            if (!targetWindow) return;
+            const photoUrl = getSafeImageSrc(profile?.fotos?.[0] || '', 'https://via.placeholder.com/500x700?text=Sin+Foto');
+            const profileName = profile?.nombre || 'Sin nombre';
+            const profileProfession = profile?.profesion || 'No definida';
+            const profileNationality = profile?.nacionalidad || 'No definida';
+            const profileBirthDate = profile?.fechaNacimiento || 'No informado';
+            const profileCity = profile?.ciudad || 'No definida';
+            const profileHeight = profile?.estaturaCm ? `${profile.estaturaCm} cm` : 'No informada';
+
+            targetWindow.document.title = `Ficha de ${profileName}`;
+            targetWindow.document.body.innerHTML = `
+                <div style="font-family: Inter, sans-serif; min-height: 100vh; margin: 0; background: linear-gradient(170deg, #020617 0%, #0f172a 55%, #111827 100%); color: #e2e8f0; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+                    <article style="width: min(920px, 100%); border-radius: 24px; border: 1px solid rgba(34,211,238,0.35); background: rgba(2,6,23,0.88); box-shadow: 0 0 28px rgba(34,211,238,0.28); overflow: hidden; display: grid; grid-template-columns: minmax(240px, 320px) 1fr;">
+                        <div style="background: #020617; min-height: 100%;">
+                            <img src="${photoUrl}" alt="${profileName}" style="width: 100%; height: 100%; min-height: 420px; object-fit: cover; display: block;" />
+                        </div>
+                        <div style="padding: 28px; display: flex; flex-direction: column; gap: 16px;">
+                            <p style="margin:0; font-size: 11px; text-transform: uppercase; letter-spacing: .35em; color: rgba(34,211,238,.9); font-weight: 800;">Ficha del personaje</p>
+                            <h1 style="margin:0; font-size: clamp(1.7rem, 3vw, 2.5rem); text-transform: uppercase;">${profileName}</h1>
+                            <p style="margin:0; font-size: .85rem; color: #93c5fd; text-transform: uppercase; letter-spacing: .1em;">${profileProfession}</p>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 10px; margin-top: 4px;">
+                                <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 12px; padding: 10px;"><strong style="display:block; font-size:11px; text-transform:uppercase; color:#67e8f9; margin-bottom:3px;">Nacionalidad</strong><span>${profileNationality}</span></div>
+                                <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 12px; padding: 10px;"><strong style="display:block; font-size:11px; text-transform:uppercase; color:#67e8f9; margin-bottom:3px;">Edad</strong><span>${ageLabel} años</span></div>
+                                <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 12px; padding: 10px;"><strong style="display:block; font-size:11px; text-transform:uppercase; color:#67e8f9; margin-bottom:3px;">Nacimiento</strong><span>${profileBirthDate}</span></div>
+                                <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 12px; padding: 10px;"><strong style="display:block; font-size:11px; text-transform:uppercase; color:#67e8f9; margin-bottom:3px;">Ciudad</strong><span>${profileCity}</span></div>
+                                <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 12px; padding: 10px;"><strong style="display:block; font-size:11px; text-transform:uppercase; color:#67e8f9; margin-bottom:3px;">Estatura</strong><span>${profileHeight}</span></div>
+                            </div>
+                        </div>
+                    </article>
+                </div>`;
+        };
+const renderGalleryWindow = ({ targetWindow, profileName, profession, photos, editingId, battlePhotoPrefs = {} }) => {
             if (!targetWindow || targetWindow.closed) return;
             const safeBattlePhotoPrefs = sanitizeBattlePhotoPreferences(battlePhotoPrefs);
 
@@ -1187,6 +1220,7 @@
             const [galleryLabelDraft, setGalleryLabelDraft] = useState('');
             const [tallerSearchTerm, setTallerSearchTerm] = useState('');
             const [selectedTallerProfileId, setSelectedTallerProfileId] = useState('');
+            const tallerWindowRef = useRef(null);
             const [isBrokenGalleryModalOpen, setIsBrokenGalleryModalOpen] = useState(false);
             const [brokenGalleryMap, setBrokenGalleryMap] = useState({});
             const [brokenGalleryUrlDrafts, setBrokenGalleryUrlDrafts] = useState({});
@@ -3127,10 +3161,6 @@ const saveProfile = (e) => {
                     })
                     .sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es', { sensitivity: 'base' }));
             }, [perfiles, tallerSearchTerm]);
-            const selectedTallerProfile = useMemo(
-                () => tallerProfiles.find((profile) => profile?.firebaseId === selectedTallerProfileId) || null,
-                [tallerProfiles, selectedTallerProfileId]
-            );
             const battleScopeOptions = useMemo(() => {
                 if (!selectedBattleScope) return [];
                 return getBattleScopeOptions(perfiles, selectedBattleScope);
@@ -3332,7 +3362,18 @@ const saveProfile = (e) => {
                                         <button
                                             key={p.firebaseId || p.nombre}
                                             type="button"
-                                            onClick={() => setSelectedTallerProfileId(p.firebaseId || '')}
+                                            onClick={() => {
+                                                const existingWindow = tallerWindowRef.current;
+                                                const profileWindow = existingWindow && !existingWindow.closed ? existingWindow : window.open('', '_blank');
+                                                tallerWindowRef.current = profileWindow;
+                                                setSelectedTallerProfileId(p.firebaseId || '');
+                                                renderTallerProfileWindow({
+                                                    targetWindow: profileWindow,
+                                                    profile: p,
+                                                    ageLabel: calcularEdad(p.fechaNacimiento)
+                                                });
+                                                profileWindow.focus();
+                                            }}
                                             className={`profile-card rounded-2xl p-4 relative overflow-hidden text-left transition-all ${isSelected ? 'taller-card--selected' : ''}`}
                                         >
                                             <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 bg-slate-900/70">
@@ -3362,43 +3403,7 @@ const saveProfile = (e) => {
                                 </div>
                             )}
 
-                            {selectedTallerProfile && (
-                                <section className="taller-detail-panel rounded-[2rem] p-8 md:p-10 relative overflow-hidden">
-                                    <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px),1fr] gap-8 items-start">
-                                        <div className="taller-detail-avatar rounded-[1.8rem] overflow-hidden border border-cyan-200/35">
-                                            <img
-                                                src={selectedTallerProfile.fotos?.[0] || 'https://via.placeholder.com/500x700'}
-                                                alt={selectedTallerProfile.nombre || 'Perfil seleccionado'}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        <div className="space-y-6">
-                                            <div>
-                                                <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-200/90 font-black">Ficha del personaje</p>
-                                                <h3 className="taller-detail-title text-3xl md:text-4xl font-black uppercase mt-2">
-                                                    {selectedTallerProfile.nombre || 'Sin nombre'}
-                                                </h3>
-                                                <p className="text-sm text-slate-300 mt-3">Perfil destacado del Taller con identidad metalizada y luces neón.</p>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <article className="taller-data-chip">
-                                                    <span>Nacionalidad - Ciudad</span>
-                                                    <strong>{`${selectedTallerProfile.nacionalidad || 'No definida'} - ${selectedTallerProfile.ciudad || 'No definida'}`}</strong>
-                                                </article>
-                                                <article className="taller-data-chip">
-                                                    <span>Fecha de nacimiento - Edad</span>
-                                                    <strong>{`${selectedTallerProfile.fechaNacimiento || 'No informado'} - ${calcularEdad(selectedTallerProfile.fechaNacimiento)} años`}</strong>
-                                                </article>
-                                                <article className="taller-data-chip md:col-span-2">
-                                                    <span>Profesión - Estatura</span>
-                                                    <strong>{`${selectedTallerProfile.profesion || 'No definida'} - ${selectedTallerProfile.estaturaCm ? `${selectedTallerProfile.estaturaCm} cm` : 'No informada'}`}</strong>
-                                                </article>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            )}
-                        </div>
+                            
                     )}
 
 
