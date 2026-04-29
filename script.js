@@ -3241,14 +3241,6 @@ const saveProfile = (e) => {
                     {isSidebarOpen && (
                     <aside className="hud-frame hud-frame--panel w-72 theme-surface-card stone-wall-surface border-r theme-border-secondary flex flex-col p-8 z-20 shadow-xl overflow-y-auto relative">
                         <div className="corner-ember-glow corner-ember-glow--left corner-ember-glow--top" aria-hidden="true"></div>
-                        <button
-                            onClick={() => setIsSidebarOpen(false)}
-                            className="absolute top-4 right-4 btn-metal btn-metal--silver rounded-full p-2 text-slate-900"
-                            aria-label="Replegar menú lateral"
-                            title="Replegar menú lateral"
-                        >
-                            <LucideIcon name="panel-left-close" size={16} />
-                        </button>
                         <div className="mb-12 text-center flex-shrink-0">
                             <h1 className="neon-sign neon-sign--cyan text-5xl font-black text-[var(--metal-gold)] italic tracking-tighter leading-none">G2</h1>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-2">Elite Database</p>
