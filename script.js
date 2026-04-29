@@ -1149,8 +1149,6 @@
         "OTRO":{ color: "#ffffff", sombra: "rgba(255,255,255,0.8)" }, // Blanco
         "DEFAULT": { color: "#334155", sombra: "transparent" }
                 };
-            const [minEdad, setMinEdad] = useState(18);
-            const [maxEdad, setMaxEdad] = useState(60);
 
             const [categorias, setCategorias] = useState(INITIAL_CATEGORIES);
             const [activeTab, setActiveTab] = useState('EXPLORAR');
@@ -1196,16 +1194,6 @@
             const [brokenGallerySavingMap, setBrokenGallerySavingMap] = useState({});
             const [brokenGalleryEditingMap, setBrokenGalleryEditingMap] = useState({});
             const galleryPlaybackTimeoutRef = useRef(null);
-
-            const [filters, setFilters] = useState({
-                nacionalidad: 'Todas',
-                profesion: 'Todas',
-                edad: 'Todas',
-                ciudad: 'Todas',
-                scoreAttr: 'Cualquiera',
-                scoreOp: 'Superior a',
-                scoreVal: ''
-            });
 
 const getInitialCatFormData = () => ({
     label: '',
@@ -3114,32 +3102,7 @@ const saveProfile = (e) => {
                 const base = perfiles;
 
                 if (activeTab === 'RANKING') {
-                    return base.filter(p => {
-                        const edad = calcularEdad(p.fechaNacimiento);
-                        const matchNac = filters.nacionalidad === 'Todas' || p.nacionalidad === filters.nacionalidad;
-                        const matchProf = filters.profesion === 'Todas' || p.profesion === filters.profesion;
-                        const matchCiudad = filters.ciudad === 'Todas' || p.ciudad === filters.ciudad;
-
-                        const matchEdad = edad >= minEdad && edad <= maxEdad;
-
-
-                        let matchScore = true;
-                        if (filters.scoreAttr !== 'Cualquiera') {
-                            // Si elige Score Total usamos el promedio, si no, el atributo específico
-                            const valPerfil = filters.scoreAttr === 'promedio'
-                                ? parseFloat(calcularPromedio(p))
-                                : getProfileScores(p)[filters.scoreAttr] || 0;
-
-                            if (filters.scoreVal !== '') {
-                                const valFiltro = parseInt(filters.scoreVal);
-                                if (filters.scoreOp === 'Superior a') matchScore = valPerfil >= valFiltro;
-                                else if (filters.scoreOp === 'Inferior a') matchScore = valPerfil <= valFiltro;
-                                else if (filters.scoreOp === 'Igual a') matchScore = valPerfil === valFiltro;
-                            }
-                        }
-
-                        return matchNac && matchProf && matchEdad && matchCiudad && matchScore;
-                    }).sort((a, b) => parseFloat(calcularPromedio(b)) - parseFloat(calcularPromedio(a)));
+                    return [...base].sort((a, b) => parseFloat(calcularPromedio(b)) - parseFloat(calcularPromedio(a)));
                 }
 
                 if (activeTab === 'CATEGORIAS' && selectedCategory) {
@@ -3147,7 +3110,7 @@ const saveProfile = (e) => {
                 }
 
                 return base;
-            }, [perfiles, activeTab, selectedCategory, filters]);
+            }, [perfiles, activeTab, selectedCategory]);
             const battleScopeOptions = useMemo(() => {
                 if (!selectedBattleScope) return [];
                 return getBattleScopeOptions(perfiles, selectedBattleScope);
@@ -3284,56 +3247,6 @@ const saveProfile = (e) => {
                                 </button>
                             ))}
                         </nav>
-
-                        {activeTab === 'RANKING' && (
-                            <div className="hud-frame hud-frame--panel space-y-6 mb-8 p-6 theme-surface-soft rounded-2xl gothic-frame gothic-frame--secondary animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <h4 className="text-[10px] font-black text-[var(--metal-gold)] uppercase tracking-widest flex items-center gap-2">
-                                    <LucideIcon name="filter" size={12} /> Filtros de Ranking
-                                </h4>
-
-                                <div className="space-y-3">
-                                    <select className="w-full theme-surface-card border theme-border-secondary p-3 rounded-2xl text-[11px] font-bold outline-none text-slate-300 filter-select" value={filters.nacionalidad} onChange={e => setFilters({...filters, nacionalidad: e.target.value})}>
-                                        <option value="Todas">Nacionalidad: Todas</option>
-                                        {uniqueNacionalidades.filter(n => n !== 'Todas').map(n => <option key={n} value={n}>{n}</option>)}
-                                    </select>
-
-                                    <select className="w-full theme-surface-card border theme-border-secondary p-3 rounded-2xl text-[11px] font-bold outline-none text-slate-300 filter-select" value={filters.profesion} onChange={e => setFilters({...filters, profesion: e.target.value})}>
-                                        <option value="Todas">Profesión: Todas</option>
-                                        {uniqueProfesiones.filter(p => p !== 'Todas').map(p => <option key={p} value={p}>{p}</option>)}
-                                    </select>
-
-                                    <select className="w-full theme-surface-card border theme-border-secondary p-3 rounded-2xl text-[11px] font-bold outline-none text-slate-300 filter-select" value={filters.ciudad} onChange={e => setFilters({...filters, ciudad: e.target.value})}>
-                                        <option value="Todas">Ciudad: Todas</option>
-                                        {uniqueCiudades.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-
-                                    <select className="w-full theme-surface-card border theme-border-secondary p-3 rounded-2xl text-[11px] font-bold outline-none text-slate-300 filter-select" value={filters.edad} onChange={e => setFilters({...filters, edad: e.target.value})}>
-                                        <option value="Todas">Edad: Todas</option>
-                                        <option value="Menores de 30">Menores de 30</option>
-                                        <option value="Mayores de 30">Mayores de 30</option>
-                                    </select>
-
-                                    <div className="pt-2 border-t theme-border-secondary mt-4">
-                                        <p className="text-[9px] font-black text-slate-500 mb-2 uppercase tracking-tighter">Filtro por Atributo</p>
-                                        <select className="w-full theme-surface-card border theme-border-secondary p-3 rounded-2xl text-[11px] font-bold outline-none text-slate-300 mb-2" value={filters.scoreAttr} onChange={e => setFilters({...filters, scoreAttr: e.target.value})}>
-                                            <option>Cualquiera</option>
-                                            {CARACTERISTICAS.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                        {filters.scoreAttr !== 'Cualquiera' && (
-                                            <div className="flex gap-2">
-                                                <select className="flex-1 theme-surface-card border theme-border-secondary p-2 rounded-xl text-[10px] font-bold outline-none text-slate-300" value={filters.scoreOp} onChange={e => setFilters({...filters, scoreOp: e.target.value})}>
-                                                    <option>Superior a</option>
-                                                    <option>Inferior a</option>
-                                                    <option>Igual a</option>
-                                                </select>
-                                                <input type="number" placeholder="0-10" className="w-16 theme-surface-card border theme-border-secondary p-2 rounded-xl text-[10px] font-bold outline-none text-[var(--metal-gold)]" value={filters.scoreVal} onChange={e => setFilters({...filters, scoreVal: e.target.value})} />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <button onClick={() => setFilters({nacionalidad:'Todas', profesion:'Todas', edad:'Todas', ciudad:'Todas', scoreAttr:'Cualquiera', scoreOp:'Superior a', scoreVal:''})} className="w-full text-[9px] font-black text-slate-600 hover:text-[var(--metal-gold)] uppercase tracking-tighter transition-colors">Limpiar Filtros</button>
-                            </div>
-                        )}
 
                         <button
                             onClick={() => {
