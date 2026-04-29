@@ -1159,6 +1159,7 @@
             const [arenaGlobalState, setArenaGlobalState] = useState({});
             const [showResetArenaPicker, setShowResetArenaPicker] = useState(false);
             const [resetArenaTarget, setResetArenaTarget] = useState(ARENAS[0] || '');
+            const [scoreBreakdownItemDetail, setScoreBreakdownItemDetail] = useState(null);
             const [showBattleResetPanel, setShowBattleResetPanel] = useState(false);
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isCatModalOpen, setIsCatModalOpen] = useState(false);
@@ -3228,6 +3229,53 @@ const saveProfile = (e) => {
                 };
             };
 
+            const getItemBattleBreakdown = (profileId, arenaName) => {
+                const safeArenaName = String(arenaName || '').trim();
+                const selectedProfileId = String(profileId || '').trim();
+                if (!safeArenaName || !selectedProfileId) {
+                    return { arenaName: safeArenaName, wins: [], losses: [] };
+                }
+
+                const arenaMatchups = arenaGlobalState?.[getArenaGlobalKey(safeArenaName)]?.matchups || {};
+                const profileNameById = new Map(
+                    (perfiles || [])
+                        .filter((profile) => profile?.firebaseId)
+                        .map((profile) => [profile.firebaseId, profile.nombre || 'Sin nombre'])
+                );
+                const mapBattle = ([pairKey, match]) => {
+                    if (!match || typeof match !== 'object') return null;
+                    const winnerId = String(match.winnerId || '').trim();
+                    const loserId = String(match.loserId || '').trim();
+                    if (!winnerId || !loserId) return null;
+
+                    const isWin = winnerId === selectedProfileId;
+                    const isLoss = loserId === selectedProfileId;
+                    if (!isWin && !isLoss) return null;
+
+                    const opponentId = isWin ? loserId : winnerId;
+                    return {
+                        pairKey,
+                        arenaName: safeArenaName,
+                        profileId: selectedProfileId,
+                        opponentId,
+                        opponentName: profileNameById.get(opponentId) || 'Sin nombre',
+                        winnerId,
+                        loserId
+                    };
+                };
+
+                const battles = Object.entries(arenaMatchups)
+                    .map(mapBattle)
+                    .filter(Boolean)
+                    .sort((a, b) => a.opponentName.localeCompare(b.opponentName, 'es', { sensitivity: 'base' }));
+
+                return {
+                    arenaName: safeArenaName,
+                    wins: battles.filter((battle) => battle.winnerId === selectedProfileId),
+                    losses: battles.filter((battle) => battle.loserId === selectedProfileId)
+                };
+            };
+
             const sortedProfiles = [...filteredProfiles].sort((a, b) => {
                 const aValue = getSortValue(a, sortBy);
                 const bValue = getSortValue(b, sortBy);
@@ -4746,10 +4794,14 @@ const saveProfile = (e) => {
 
             {scoreBreakdownModal.isOpen && scoreBreakdownModal.profile && scoreBreakdownModal.category && (() => {
                 const breakdown = getScoreBreakdownByCategory(scoreBreakdownModal.profile.firebaseId, scoreBreakdownModal.category);
+                const categoryItems = SCORE_GROUP_TO_ARENAS[scoreBreakdownModal.category] || [];
                 return (
                     <div
                         className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-                        onClick={() => setScoreBreakdownModal({ isOpen: false, profile: null, category: null })}
+                        onClick={() => {
+                            setScoreBreakdownModal({ isOpen: false, profile: null, category: null });
+                            setScoreBreakdownItemDetail(null);
+                        }}
                     >
                         <div
                             className="w-full max-w-3xl theme-surface-card border theme-border-secondary rounded-2xl p-6"
@@ -4766,11 +4818,33 @@ const saveProfile = (e) => {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setScoreBreakdownModal({ isOpen: false, profile: null, category: null })}
+                                    onClick={() => {
+                                        setScoreBreakdownModal({ isOpen: false, profile: null, category: null });
+                                        setScoreBreakdownItemDetail(null);
+                                    }}
                                     className="btn-metal btn-metal--silver px-3 py-2 rounded-lg text-[10px] font-black"
                                 >
                                     Cerrar
                                 </button>
+                            </div>
+
+                            <div className="mb-4">
+                                <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-black mb-2">Detalle por ítem</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {categoryItems.map((itemName) => (
+                                        <button
+                                            key={`breakdown-item-${itemName}`}
+                                            type="button"
+                                            onClick={() => {
+                                                const itemDetail = getItemBattleBreakdown(scoreBreakdownModal.profile.firebaseId, itemName);
+                                                setScoreBreakdownItemDetail(itemDetail);
+                                            }}
+                                            className="btn-metal btn-metal--bronze px-3 py-2 rounded-lg text-[10px] font-black"
+                                        >
+                                            {itemName}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -4800,6 +4874,67 @@ const saveProfile = (e) => {
                                     )}
                                 </div>
                             </div>
+
+                            {scoreBreakdownItemDetail?.arenaName && (
+                                <div className="mt-5 rounded-2xl border border-cyan-500/40 bg-cyan-950/15 p-4">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h4 className="text-xs font-black uppercase tracking-[0.16em] text-cyan-200">
+                                            Ítem: {scoreBreakdownItemDetail.arenaName}
+                                        </h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => setScoreBreakdownItemDetail(null)}
+                                            className="btn-metal btn-metal--silver px-3 py-2 rounded-lg text-[10px] font-black"
+                                        >
+                                            Cerrar detalle
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {['wins', 'losses'].map((resultType) => {
+                                            const isWinList = resultType === 'wins';
+                                            const battleList = scoreBreakdownItemDetail[resultType] || [];
+                                            return (
+                                                <div key={`item-detail-${resultType}`} className={`rounded-xl border p-3 min-h-36 ${isWinList ? 'border-emerald-500/40 bg-emerald-950/15' : 'border-rose-500/40 bg-rose-950/15'}`}>
+                                                    <h5 className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 ${isWinList ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                                        {isWinList ? 'Ganadas' : 'Perdidas'}
+                                                    </h5>
+                                                    {battleList.length ? (
+                                                        <ul className="space-y-2">
+                                                            {battleList.map((battle, idx) => (
+                                                                <li key={`${resultType}-${battle.pairKey}-${idx}`} className="flex items-center justify-between gap-2">
+                                                                    <span className={`text-sm font-semibold ${isWinList ? 'text-emerald-100' : 'text-rose-100'}`}>{battle.opponentName}</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn-metal btn-metal--red px-2 py-1 rounded text-[9px] font-black"
+                                                                        onClick={async () => {
+                                                                            const confirmed = window.confirm('¿Seguro que querés deshacer esta batalla?');
+                                                                            if (!confirmed) return;
+                                                                            try {
+                                                                                await resetSpecificBattle(battle.arenaName, battle.profileId, battle.opponentId);
+                                                                                const refreshedDetail = getItemBattleBreakdown(scoreBreakdownModal.profile.firebaseId, battle.arenaName);
+                                                                                setScoreBreakdownItemDetail(refreshedDetail);
+                                                                            } catch (error) {
+                                                                                console.error('No se pudo eliminar la batalla del desglose:', error);
+                                                                                alert('No se pudo eliminar la batalla. Verificá tu conexión con Firebase e intentá de nuevo.');
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Eliminar
+                                                                    </button>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : (
+                                                        <p className={`text-xs ${isWinList ? 'text-emerald-200/70' : 'text-rose-200/70'}`}>
+                                                            {isWinList ? 'No hay batallas ganadas registradas.' : 'No hay batallas perdidas registradas.'}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
