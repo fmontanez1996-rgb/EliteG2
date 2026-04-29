@@ -3266,7 +3266,8 @@ const saveProfile = (e) => {
                                 { id: 'RANKING', icon: 'trending-up', label: 'Ranking' },
                                 { id: 'BATALLAS', icon: 'swords', label: 'Batallas' },
                                 { id: 'CATEGORIAS', icon: 'folder-heart', label: 'Categorías' },
-                                { id: 'GALERIA', icon: 'images', label: 'Galería' }
+                                { id: 'GALERIA', icon: 'images', label: 'Galería' },
+                                { id: 'TALLER', icon: 'hammer', label: 'Taller' }
                             ].map(item => (
                                 <button
                                     key={item.id}
@@ -3366,6 +3367,12 @@ const saveProfile = (e) => {
                         <div className="hud-section flex-1 overflow-y-auto p-12 relative z-10 stone-wall-surface">
                             <div className="corner-ember-glow corner-ember-glow--left corner-ember-glow--top" aria-hidden="true"></div>
                             <div className="corner-ember-glow corner-ember-glow--right corner-ember-glow--top" aria-hidden="true"></div>
+
+                    {/* VISTA TALLER (VACÍA POR AHORA) */}
+                    {activeTab === 'TALLER' && (
+                        <div></div>
+                    )}
+
 
    {/* 1. VISTA EXPLORAR (CARPETAS POR PROFESIÓN) */}
                     {activeTab === 'EXPLORAR' && !selectedCategory && (
