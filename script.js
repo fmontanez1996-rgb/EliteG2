@@ -1173,6 +1173,7 @@
             const [sortBy, setSortBy] = useState('promedio');
             const [sortDirection, setSortDirection] = useState('desc');
             const [scoreBreakdownModal, setScoreBreakdownModal] = useState({ isOpen: false, profile: null, category: null });
+            const [scorePanelModal, setScorePanelModal] = useState({ isOpen: false, profile: null });
             const [galleryFilterLabel, setGalleryFilterLabel] = useState('INICIAL');
             const [galleryViewMode, setGalleryViewMode] = useState('GENERAL');
             const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(null);
@@ -1642,21 +1643,35 @@ const getInitialCatFormData = () => ({
             const getProfileScores = (profile = {}) => {
                 return { ...createZeroScores(), ...(profile?.puntuaciones || {}) };
             };
-            const getRostroScore = (profile = {}) => {
+            const SCORE_GROUP_TO_ARENAS = {
+                Rostro: ['Rostro', 'Ojos', 'Boca', 'Cabello'],
+                Cuerpo: ['Cuerpo', 'Cola', 'Pechos', 'Cintura', 'Piernas', 'Estatura'],
+                Actitud: ['Sensualidad', 'Carisma', 'Elegancia', 'Dulzura', 'Talento']
+            };
+            const averageScoresByKeys = (profile = {}, keys = []) => {
+                if (!Array.isArray(keys) || !keys.length) return 0;
                 const scores = getProfileScores(profile);
-                return (scores.Rostro + scores.Ojos + scores.Boca + scores.Cabello) / 4;
+                return keys.reduce((sum, key) => sum + (Number(scores[key]) || 0), 0) / keys.length;
+            };
+            const getRostroScore = (profile = {}) => {
+                return averageScoresByKeys(profile, SCORE_GROUP_TO_ARENAS.Rostro);
             };
             const getCuerpoScore = (profile = {}) => {
-                const scores = getProfileScores(profile);
-                return (scores.Cuerpo + scores.Cola + scores.Pechos + scores.Cintura + scores.Piernas + scores.Estatura) / 6;
+                return averageScoresByKeys(profile, SCORE_GROUP_TO_ARENAS.Cuerpo);
             };
             const getActitudScore = (profile = {}) => {
-                const scores = getProfileScores(profile);
-                return (scores.Sensualidad + scores.Carisma + scores.Elegancia + scores.Dulzura + scores.Talento) / 5;
+                return averageScoresByKeys(profile, SCORE_GROUP_TO_ARENAS.Actitud);
+            };
+            const getCategoryScore = (profile = {}, categoryKey = '') => {
+                if (categoryKey === 'Rostro') return getRostroScore(profile);
+                if (categoryKey === 'Cuerpo') return getCuerpoScore(profile);
+                if (categoryKey === 'Actitud') return getActitudScore(profile);
+                return 0;
             };
             const calcularPromedio = (p = {}) => {
                 // El Score Total es el promedio de las 3 categorías principales
-                const scoreTotal = (getRostroScore(p) + getCuerpoScore(p) + getActitudScore(p)) / 3;
+                const categoryScores = Object.keys(SCORE_GROUP_TO_ARENAS).map((key) => getCategoryScore(p, key));
+                const scoreTotal = categoryScores.reduce((sum, value) => sum + value, 0) / categoryScores.length;
                 return scoreTotal.toFixed(0);
             };
 
@@ -3175,12 +3190,6 @@ const saveProfile = (e) => {
                 setSortDirection(defaultDirection);
             };
 
-            const SCORE_GROUP_TO_ARENAS = {
-                Rostro: ['Rostro', 'Ojos', 'Boca', 'Cabello'],
-                Cuerpo: ['Cuerpo', 'Cola', 'Pechos', 'Cintura', 'Piernas', 'Estatura'],
-                Actitud: ['Sensualidad', 'Carisma', 'Elegancia', 'Dulzura', 'Talento']
-            };
-
             const getScoreBreakdownByCategory = (profileId, categoryKey) => {
                 const arenaNames = SCORE_GROUP_TO_ARENAS[categoryKey] || [];
                 const winIds = new Set();
@@ -3576,7 +3585,15 @@ const saveProfile = (e) => {
                                     )}
                                 </div>
 
-                                <div className={`card-score-badge ${scoreTierClass} absolute top-2 right-2 w-14 h-14 backdrop-blur-md rounded-full flex flex-col items-center justify-center border`}>
+                                <button
+                                    type="button"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setScorePanelModal({ isOpen: true, profile: p });
+                                    }}
+                                    className={`card-score-badge ${scoreTierClass} absolute top-2 right-2 w-14 h-14 backdrop-blur-md rounded-full flex flex-col items-center justify-center border`}
+                                    title={`Puntaje de ${p.nombre}`}
+                                >
                                     {scoreValue >= 75 && scoreValue <= 85 && (
                                         <span className="card-score-badge__fire-emoji" aria-hidden="true">🔥</span>
                                     )}
@@ -3584,7 +3601,7 @@ const saveProfile = (e) => {
                                     <span className="card-score-badge__value text-lg font-black">
                                         {typeof calcularPromedio === 'function' ? calcularPromedio(p) : '8.5'}
                                     </span>
-                                </div>
+                                </button>
 
                                 <div className="absolute bottom-4 left-4 right-4">
                                     <div className="text-bubble card-footer-profession w-full backdrop-blur-md p-4 rounded-2xl border">
@@ -4748,6 +4765,59 @@ const saveProfile = (e) => {
                                     )}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {scorePanelModal.isOpen && scorePanelModal.profile && (() => {
+                const selectedProfile = scorePanelModal.profile;
+                const profileScores = getProfileScores(selectedProfile);
+                const categoryEntries = Object.entries(SCORE_GROUP_TO_ARENAS);
+                return (
+                    <div
+                        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setScorePanelModal({ isOpen: false, profile: null })}
+                    >
+                        <div className="w-full max-w-3xl theme-surface-card border theme-border-secondary rounded-2xl p-6 space-y-6" onClick={(event) => event.stopPropagation()}>
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <h3 className="font-title text-xl font-black text-white tracking-wide">{selectedProfile.nombre} · Puntaje</h3>
+                                    <p className="text-xs text-slate-300 mt-1">Panel de detalle por ítems, características y G2 Score.</p>
+                                </div>
+                                <button type="button" onClick={(event) => { event.stopPropagation(); setScorePanelModal({ isOpen: false, profile: null }); }} className="btn-metal btn-metal--silver px-3 py-2 rounded-lg text-[10px] font-black">
+                                    Cerrar
+                                </button>
+                            </div>
+
+                            <section className="space-y-3">
+                                <h4 className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Ítems</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {CARACTERISTICAS.map((itemKey) => (
+                                        <button key={itemKey} type="button" onClick={(event) => event.stopPropagation()} className="px-3 py-2 rounded-lg text-xs font-bold border border-slate-600/80 bg-slate-900/80 text-slate-100">
+                                            {itemKey}: {Number(profileScores[itemKey] || 0).toFixed(0)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section className="space-y-3">
+                                <h4 className="text-xs font-black uppercase tracking-[0.16em] text-cyan-300">Características</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {categoryEntries.map(([categoryKey, arenaKeys]) => (
+                                        <button key={categoryKey} type="button" onClick={(event) => event.stopPropagation()} className="px-3 py-2 rounded-lg text-xs font-bold border border-cyan-500/50 bg-cyan-950/25 text-cyan-100">
+                                            {categoryKey}: {getCategoryScore(selectedProfile, categoryKey).toFixed(0)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section className="space-y-3">
+                                <h4 className="text-xs font-black uppercase tracking-[0.16em] text-[var(--metal-gold)]">G2 Score</h4>
+                                <button type="button" onClick={(event) => event.stopPropagation()} className="w-full px-4 py-3 rounded-xl text-sm font-black border border-[var(--metal-gold)]/50 bg-[color:color-mix(in_srgb,var(--metal-gold)_18%,rgba(15,23,42,0.82))] text-[var(--metal-gold)]">
+                                    G2 SCORE TOTAL: {calcularPromedio(selectedProfile)}
+                                </button>
+                            </section>
                         </div>
                     </div>
                 );
