@@ -1227,7 +1227,6 @@
             const [sortDirection, setSortDirection] = useState('desc');
             const [scoreBreakdownModal, setScoreBreakdownModal] = useState({ isOpen: false, profile: null, category: null });
             const [scorePanelModal, setScorePanelModal] = useState({ isOpen: false, profile: null });
-            const [scorePanelDetail, setScorePanelDetail] = useState({ type: null, key: null });
             const [galleryFilterLabel, setGalleryFilterLabel] = useState('INICIAL');
             const [galleryViewMode, setGalleryViewMode] = useState('GENERAL');
             const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(null);
@@ -3286,7 +3285,7 @@ const saveProfile = (e) => {
                 const safeArenaName = String(arenaName || '').trim();
                 const selectedProfileId = String(profileId || '').trim();
                 if (!safeArenaName || !selectedProfileId) {
-                    return { arenaName: safeArenaName, wins: [], losses: [], pending: [] };
+                    return { arenaName: safeArenaName, wins: [], losses: [] };
                 }
 
                 const arenaMatchups = arenaGlobalState?.[getArenaGlobalKey(safeArenaName)]?.matchups || {};
@@ -3325,15 +3324,7 @@ const saveProfile = (e) => {
                 return {
                     arenaName: safeArenaName,
                     wins: battles.filter((battle) => battle.winnerId === selectedProfileId),
-                    losses: battles.filter((battle) => battle.loserId === selectedProfileId),
-                    pending: (perfiles || [])
-                        .filter((profile) => profile?.firebaseId && profile.firebaseId !== selectedProfileId)
-                        .filter((profile) => !battles.some((battle) => battle.opponentId === profile.firebaseId))
-                        .map((profile) => ({
-                            opponentId: profile.firebaseId,
-                            opponentName: profile.nombre || 'Sin nombre'
-                        }))
-                        .sort((a, b) => a.opponentName.localeCompare(b.opponentName, 'es', { sensitivity: 'base' }))
+                    losses: battles.filter((battle) => battle.loserId === selectedProfileId)
                 };
             };
 
@@ -3530,8 +3521,7 @@ const saveProfile = (e) => {
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                setScorePanelDetail({ type: null, key: null });
-                                                                setScorePanelModal({ isOpen: true, profile: selectedTallerProfile });
+                                                                openSimpleTitleWindow('PUNTAJES');
                                                             }}
                                                             className="btn-metal py-3 rounded-xl text-[11px] font-black tracking-wide uppercase"
                                                         >
@@ -4953,47 +4943,44 @@ const saveProfile = (e) => {
                                             Cerrar detalle
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {['wins', 'losses', 'pending'].map((resultType) => {
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {['wins', 'losses'].map((resultType) => {
                                             const isWinList = resultType === 'wins';
-                                            const isPendingList = resultType === 'pending';
                                             const battleList = scoreBreakdownItemDetail[resultType] || [];
                                             return (
-                                                <div key={`item-detail-${resultType}`} className={`rounded-xl border p-3 min-h-36 ${isWinList ? 'border-emerald-500/40 bg-emerald-950/15' : isPendingList ? 'border-amber-500/40 bg-amber-950/15' : 'border-rose-500/40 bg-rose-950/15'}`}>
-                                                    <h5 className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 ${isWinList ? 'text-emerald-300' : isPendingList ? 'text-amber-300' : 'text-rose-300'}`}>
-                                                        {isWinList ? 'Ganadas' : isPendingList ? 'Pendientes' : 'Perdidas'}
+                                                <div key={`item-detail-${resultType}`} className={`rounded-xl border p-3 min-h-36 ${isWinList ? 'border-emerald-500/40 bg-emerald-950/15' : 'border-rose-500/40 bg-rose-950/15'}`}>
+                                                    <h5 className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 ${isWinList ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                                        {isWinList ? 'Ganadas' : 'Perdidas'}
                                                     </h5>
                                                     {battleList.length ? (
                                                         <ul className="space-y-2">
                                                             {battleList.map((battle, idx) => (
                                                                 <li key={`${resultType}-${battle.pairKey}-${idx}`} className="flex items-center justify-between gap-2">
-                                                                    <span className={`text-sm font-semibold ${isWinList ? 'text-emerald-100' : isPendingList ? 'text-amber-100' : 'text-rose-100'}`}>{battle.opponentName}</span>
-                                                                    {!isPendingList && (
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn-metal btn-metal--red px-2 py-1 rounded text-[9px] font-black"
-                                                                            onClick={async () => {
-                                                                                const confirmed = window.confirm('¿Seguro que querés deshacer esta batalla?');
-                                                                                if (!confirmed) return;
-                                                                                try {
-                                                                                    await resetSpecificBattle(battle.arenaName, battle.profileId, battle.opponentId);
-                                                                                    const refreshedDetail = getItemBattleBreakdown(scoreBreakdownModal.profile.firebaseId, battle.arenaName);
-                                                                                    setScoreBreakdownItemDetail(refreshedDetail);
-                                                                                } catch (error) {
-                                                                                    console.error('No se pudo eliminar la batalla del desglose:', error);
-                                                                                    alert('No se pudo eliminar la batalla. Verificá tu conexión con Firebase e intentá de nuevo.');
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            Eliminar
-                                                                        </button>
-                                                                    )}
+                                                                    <span className={`text-sm font-semibold ${isWinList ? 'text-emerald-100' : 'text-rose-100'}`}>{battle.opponentName}</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn-metal btn-metal--red px-2 py-1 rounded text-[9px] font-black"
+                                                                        onClick={async () => {
+                                                                            const confirmed = window.confirm('¿Seguro que querés deshacer esta batalla?');
+                                                                            if (!confirmed) return;
+                                                                            try {
+                                                                                await resetSpecificBattle(battle.arenaName, battle.profileId, battle.opponentId);
+                                                                                const refreshedDetail = getItemBattleBreakdown(scoreBreakdownModal.profile.firebaseId, battle.arenaName);
+                                                                                setScoreBreakdownItemDetail(refreshedDetail);
+                                                                            } catch (error) {
+                                                                                console.error('No se pudo eliminar la batalla del desglose:', error);
+                                                                                alert('No se pudo eliminar la batalla. Verificá tu conexión con Firebase e intentá de nuevo.');
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Eliminar
+                                                                    </button>
                                                                 </li>
                                                             ))}
                                                         </ul>
                                                     ) : (
-                                                        <p className={`text-xs ${isWinList ? 'text-emerald-200/70' : isPendingList ? 'text-amber-200/70' : 'text-rose-200/70'}`}>
-                                                            {isWinList ? 'No hay batallas ganadas registradas.' : isPendingList ? 'No hay batallas pendientes en este ítem.' : 'No hay batallas perdidas registradas.'}
+                                                        <p className={`text-xs ${isWinList ? 'text-emerald-200/70' : 'text-rose-200/70'}`}>
+                                                            {isWinList ? 'No hay batallas ganadas registradas.' : 'No hay batallas perdidas registradas.'}
                                                         </p>
                                                     )}
                                                 </div>
@@ -5017,12 +5004,12 @@ const saveProfile = (e) => {
                         onClick={() => setScorePanelModal({ isOpen: false, profile: null })}
                     >
                         <div className="w-full max-w-3xl theme-surface-card border theme-border-secondary rounded-2xl p-6 space-y-6" onClick={(event) => event.stopPropagation()}>
-                            <div className="relative text-center">
+                            <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <h3 className="font-title text-xl font-black text-white tracking-wide">{selectedProfile.nombre} · Puntaje</h3>
                                     <p className="text-xs text-slate-300 mt-1">Panel de detalle por ítems, características y G2 Score.</p>
                                 </div>
-                                <button type="button" onClick={(event) => { event.stopPropagation(); setScorePanelModal({ isOpen: false, profile: null }); setScorePanelDetail({ type: null, key: null }); }} className="btn-metal btn-metal--silver px-3 py-2 rounded-lg text-[10px] font-black absolute right-0 top-0">
+                                <button type="button" onClick={(event) => { event.stopPropagation(); setScorePanelModal({ isOpen: false, profile: null }); }} className="btn-metal btn-metal--silver px-3 py-2 rounded-lg text-[10px] font-black">
                                     Cerrar
                                 </button>
                             </div>
@@ -5031,7 +5018,7 @@ const saveProfile = (e) => {
                                 <h4 className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Ítems</h4>
                                 <div className="flex flex-wrap gap-2">
                                     {CARACTERISTICAS.map((itemKey) => (
-                                        <button key={itemKey} type="button" onClick={(event) => { event.stopPropagation(); setScorePanelDetail({ type: 'item', key: itemKey }); setScoreBreakdownItemDetail(getItemBattleBreakdown(selectedProfile.firebaseId, itemKey)); }} className="px-3 py-2 rounded-lg text-xs font-bold border border-slate-600/80 bg-slate-900/80 text-slate-100">
+                                        <button key={itemKey} type="button" onClick={(event) => event.stopPropagation()} className="px-3 py-2 rounded-lg text-xs font-bold border border-slate-600/80 bg-slate-900/80 text-slate-100">
                                             {itemKey}: {Number(profileScores[itemKey] || 0).toFixed(0)}
                                         </button>
                                     ))}
@@ -5042,7 +5029,7 @@ const saveProfile = (e) => {
                                 <h4 className="text-xs font-black uppercase tracking-[0.16em] text-cyan-300">Características</h4>
                                 <div className="flex flex-wrap gap-2">
                                     {categoryEntries.map(([categoryKey, arenaKeys]) => (
-                                        <button key={categoryKey} type="button" onClick={(event) => { event.stopPropagation(); setScorePanelDetail({ type: 'category', key: categoryKey }); }} className="px-3 py-2 rounded-lg text-xs font-bold border border-cyan-500/50 bg-cyan-950/25 text-cyan-100">
+                                        <button key={categoryKey} type="button" onClick={(event) => event.stopPropagation()} className="px-3 py-2 rounded-lg text-xs font-bold border border-cyan-500/50 bg-cyan-950/25 text-cyan-100">
                                             {categoryKey}: {getCategoryScore(selectedProfile, categoryKey).toFixed(0)}
                                         </button>
                                     ))}
@@ -5051,34 +5038,10 @@ const saveProfile = (e) => {
 
                             <section className="space-y-3">
                                 <h4 className="text-xs font-black uppercase tracking-[0.16em] text-[var(--metal-gold)]">G2 Score</h4>
-                                <button type="button" onClick={(event) => { event.stopPropagation(); setScorePanelDetail({ type: 'total', key: 'G2' }); }} className="w-full px-4 py-3 rounded-xl text-sm font-black border border-[var(--metal-gold)]/50 bg-[color:color-mix(in_srgb,var(--metal-gold)_18%,rgba(15,23,42,0.82))] text-[var(--metal-gold)]">
+                                <button type="button" onClick={(event) => event.stopPropagation()} className="w-full px-4 py-3 rounded-xl text-sm font-black border border-[var(--metal-gold)]/50 bg-[color:color-mix(in_srgb,var(--metal-gold)_18%,rgba(15,23,42,0.82))] text-[var(--metal-gold)]">
                                     G2 SCORE TOTAL: {calcularPromedio(selectedProfile)}
                                 </button>
                             </section>
-
-                            {scorePanelDetail.type === 'category' && scorePanelDetail.key && (
-                                <section className="space-y-2 rounded-xl border border-cyan-500/35 bg-cyan-950/15 p-4">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-cyan-200">Ítems de {scorePanelDetail.key}</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(SCORE_GROUP_TO_ARENAS[scorePanelDetail.key] || []).map((itemKey) => (
-                                            <span key={`cat-item-${itemKey}`} className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-900/70 border border-slate-600/70 text-slate-100">{itemKey}: {Number(profileScores[itemKey] || 0).toFixed(0)}</span>
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-
-                            {scorePanelDetail.type === 'total' && (
-                                <section className="space-y-2 rounded-xl border border-[var(--metal-gold)]/35 bg-[color:color-mix(in_srgb,var(--metal-gold)_10%,rgba(15,23,42,0.9))] p-4">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--metal-gold)]">Detalle de características</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                        {Object.keys(SCORE_GROUP_TO_ARENAS).map((categoryKey) => (
-                                            <span key={`g2-cat-${categoryKey}`} className="px-3 py-2 rounded-lg text-xs font-bold border border-[var(--metal-gold)]/35 text-[var(--metal-gold)] bg-slate-950/50">
-                                                {categoryKey}: {getCategoryScore(selectedProfile, categoryKey).toFixed(0)}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
                         </div>
                     </div>
                 );
