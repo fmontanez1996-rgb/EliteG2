@@ -1239,6 +1239,9 @@
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [isEditingGalleryLabel, setIsEditingGalleryLabel] = useState(false);
             const [galleryLabelDraft, setGalleryLabelDraft] = useState('');
+            const [galleryUrlDraft, setGalleryUrlDraft] = useState('');
+            const [galleryEditorError, setGalleryEditorError] = useState('');
+            const [isSavingGalleryEditor, setIsSavingGalleryEditor] = useState(false);
             const [tallerSearchTerm, setTallerSearchTerm] = useState('');
             const [selectedTallerProfileId, setSelectedTallerProfileId] = useState('');
             const [isBrokenGalleryModalOpen, setIsBrokenGalleryModalOpen] = useState(false);
@@ -1968,10 +1971,14 @@ const getInitialCatFormData = () => ({
                 if (!selectedGalleryPhoto) {
                     setIsEditingGalleryLabel(false);
                     setGalleryLabelDraft('');
+                    setGalleryUrlDraft('');
+                    setGalleryEditorError('');
                     return;
                 }
                 setIsEditingGalleryLabel(false);
                 setGalleryLabelDraft(selectedGalleryPhoto.label || '');
+                setGalleryUrlDraft(selectedGalleryPhoto.url || '');
+                setGalleryEditorError('');
             }, [selectedGalleryPhoto]);
 
             useEffect(() => {
@@ -2125,6 +2132,7 @@ const getInitialCatFormData = () => ({
             const openGalleryViewer = (index, autoplay = false) => {
                 setSelectedGalleryIndex(index);
                 setIsGalleryPlaying(autoplay);
+                setIsEditingGalleryLabel(true);
             };
             const addCharacterToGallerySelection = (bucketId) => {
                 if (!bucketId) return;
@@ -2152,7 +2160,26 @@ const getInitialCatFormData = () => ({
             const showPreviousGalleryPhoto = () => setSelectedGalleryIndex((current) => clampIndex((current ?? 0) - 1, filteredGalleryPhotos.length));
             const saveSelectedGalleryLabel = async () => {
                 if (!selectedGalleryPhoto?.profileId || !selectedGalleryPhoto?.sourceTag || !Number.isInteger(selectedGalleryPhoto?.sourceIndex)) return;
+                const normalizedUrl = (galleryUrlDraft || '').trim();
+                if (!normalizedUrl) {
+                    setGalleryEditorError('La URL no puede estar vacía.');
+                    return;
+                }
+                if (isBlockedMediaUrl(normalizedUrl) || !getSafeImageSrc(normalizedUrl, '')) {
+                    setGalleryEditorError('La URL está bloqueada o no es válida.');
+                    return;
+                }
                 try {
+                    setIsSavingGalleryEditor(true);
+                    setGalleryEditorError('');
+                    if (normalizedUrl !== selectedGalleryPhoto.url) {
+                        await updateGalleryItemUrl({
+                            profileId: selectedGalleryPhoto.profileId,
+                            sourceTag: selectedGalleryPhoto.sourceTag,
+                            sourceIndex: selectedGalleryPhoto.sourceIndex,
+                            url: normalizedUrl
+                        });
+                    }
                     await updateGalleryItemLabel({
                         profileId: selectedGalleryPhoto.profileId,
                         sourceTag: selectedGalleryPhoto.sourceTag,
@@ -2161,7 +2188,10 @@ const getInitialCatFormData = () => ({
                     });
                     setIsEditingGalleryLabel(false);
                 } catch (error) {
+                    setGalleryEditorError('No se pudo guardar la edición del ítem.');
                     console.error('Error al actualizar etiqueta de la multimedia:', error);
+                } finally {
+                    setIsSavingGalleryEditor(false);
                 }
             };
             const handleBrokenDraftChange = (photoId, nextUrl) => {
@@ -4214,6 +4244,13 @@ const saveProfile = (e) => {
                             <div className="flex items-center justify-start sm:justify-end gap-2">
                                 {isEditingGalleryLabel ? (
                                     <>
+                                        <input
+                                            type="url"
+                                            value={galleryUrlDraft}
+                                            onChange={(event) => setGalleryUrlDraft(event.target.value)}
+                                            placeholder="https://..."
+                                            className="min-w-[260px] bg-slate-900 border theme-border-secondary rounded-lg px-2 py-1 text-[10px] font-bold tracking-[0.04em] text-white focus:outline-none focus:border-[var(--metal-gold)]"
+                                        />
                                         <select
                                             value={galleryLabelDraft}
                                             onChange={(event) => setGalleryLabelDraft(event.target.value)}
@@ -4227,14 +4264,17 @@ const saveProfile = (e) => {
                                         <button
                                             type="button"
                                             onClick={saveSelectedGalleryLabel}
+                                            disabled={isSavingGalleryEditor}
                                             className="px-2 py-1 rounded-lg border theme-border-secondary bg-slate-900 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--metal-gold)] hover:border-[var(--metal-gold)] transition-all"
                                         >
-                                            Guardar
+                                            {isSavingGalleryEditor ? 'Guardando...' : 'Guardar'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 setGalleryLabelDraft(selectedGalleryPhoto?.label || '');
+                                                setGalleryUrlDraft(selectedGalleryPhoto?.url || '');
+                                                setGalleryEditorError('');
                                                 setIsEditingGalleryLabel(false);
                                             }}
                                             className="px-2 py-1 rounded-lg border theme-border-secondary bg-slate-900 text-[10px] font-black uppercase tracking-[0.14em] text-slate-300 hover:text-white transition-all"
@@ -4252,6 +4292,9 @@ const saveProfile = (e) => {
                                         <span className="text-xs leading-none">✏️</span>
                                         <span>{selectedGalleryPhoto?.label || 'Sin etiqueta'}</span>
                                     </button>
+                                )}
+                                {isEditingGalleryLabel && galleryEditorError && (
+                                    <p className="text-[10px] font-bold tracking-[0.04em] text-rose-300">{galleryEditorError}</p>
                                 )}
                             </div>
                         </div>
