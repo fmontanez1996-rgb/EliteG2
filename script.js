@@ -218,6 +218,28 @@
         const getGalleryItemUrl = (item) => normalizeGalleryItem(item).url;
         const getGalleryItemLabel = (item) => normalizeGalleryItem(item).label;
         const getGalleryItemType = (item) => normalizeGalleryItem(item).type;
+        const openSimpleTitleWindow = (title = '') => {
+            const normalizedTitle = String(title || '').trim();
+            if (!normalizedTitle) return;
+            const popup = window.open('', '_blank', 'noopener,noreferrer');
+            if (!popup) return;
+            popup.document.write(`
+                <!DOCTYPE html>
+                <html lang="es">
+                    <head>
+                        <meta charset="UTF-8" />
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                        <title>${normalizedTitle}</title>
+                    </head>
+                    <body style="margin:0;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;background:#020617;color:#e2e8f0;font-family:Arial,sans-serif;">
+                        <main style="width:100%;max-width:960px;padding:48px 24px;">
+                            <h1 style="margin:0;font-size:2.25rem;letter-spacing:0.08em;text-transform:uppercase;">${normalizedTitle}</h1>
+                        </main>
+                    </body>
+                </html>
+            `);
+            popup.document.close();
+        };
         const checkImageUrlIsBroken = async (url = '', {
             timeoutMs = 12000,
             retries = 1
@@ -3469,8 +3491,7 @@ const saveProfile = (e) => {
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                setSelectedTallerProfileId('');
-                                                                openProfileEditor(selectedTallerProfile);
+                                                                openSimpleTitleWindow('PUNTAJES');
                                                             }}
                                                             className="btn-metal py-3 rounded-xl text-[11px] font-black tracking-wide uppercase"
                                                         >
@@ -3479,8 +3500,7 @@ const saveProfile = (e) => {
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                setSelectedTallerProfileId('');
-                                                                openProfileEditor(selectedTallerProfile);
+                                                                openSimpleTitleWindow('MULTIMEDIA');
                                                             }}
                                                             className="btn-metal py-3 rounded-xl text-[11px] font-black tracking-wide uppercase"
                                                         >
