@@ -1269,6 +1269,15 @@ const getInitialCatFormData = () => ({
                 setEditingId(contextProfile.firebaseId || contextProfile.id || null);
                 setIsModalOpen(true);
             };
+            const openNewProfileForm = (prefilledProfession = '') => {
+                const normalizedProfession = String(prefilledProfession || '').trim();
+                setEditingId(null);
+                setFormData({
+                    ...getEmptyProfileFormData(),
+                    profesion: normalizedProfession
+                });
+                setIsModalOpen(true);
+            };
             const profileCompletionRows = useMemo(() => {
                 const rows = [
                     { key: 'nombre', label: 'Nombre', value: formData?.nombre },
@@ -3335,11 +3344,7 @@ const saveProfile = (e) => {
                         )}
 
                         <button
-                            onClick={() => {
-                                setEditingId(null);
-                                setFormData(getEmptyProfileFormData());
-                                setIsModalOpen(true);
-                            }}
+                            onClick={() => openNewProfileForm()}
                             className="btn-metal btn-metal--gold py-5 rounded-[2.2rem] text-[11px] flex items-center justify-center gap-2 flex-shrink-0"
                         >
                             <LucideIcon name="plus" size={16} /> Nuevo Perfil
@@ -3426,15 +3431,26 @@ const saveProfile = (e) => {
                         : getProfessionCardVisual(selectedCategory).baseColor)
                 }}
             >
-                <button
-                    onClick={() => setSelectedCategory(null)}
-                    className="group flex items-center gap-3 text-[var(--metal-gold)] font-black text-xs uppercase tracking-widest"
-                >
-                    <div className="back-btn-silver p-2 rounded-xl group-hover:text-white transition-all">
-                        <i data-lucide="arrow-left" className="w-4 h-4"></i>
-                    </div>
-                    Volver
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setSelectedCategory(null)}
+                        className="group flex items-center"
+                        aria-label="Volver"
+                        title="Volver"
+                    >
+                        <div className="back-btn-silver p-2 rounded-xl text-slate-400 group-hover:text-slate-200 transition-all">
+                            <i data-lucide="arrow-left" className="w-4 h-4"></i>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => openNewProfileForm(activeTab === 'CATEGORIAS' ? '' : selectedCategory)}
+                        className="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xl leading-none flex items-center justify-center shadow-[0_0_14px_rgba(16,185,129,0.45)] transition-all"
+                        aria-label="Agregar nuevo perfil"
+                        title="Agregar nuevo perfil"
+                    >
+                        +
+                    </button>
+                </div>
                 <h2 className="neon-sign neon-sign--magenta font-title text-6xl font-black italic text-white tracking-[0.08em] leading-none">
     {/* Si estamos en la pestaña de categorías, buscamos el nombre lindo. Si no, mostramos la profesión directamente */}
     {activeTab === 'CATEGORIAS'
