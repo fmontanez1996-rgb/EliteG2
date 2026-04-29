@@ -3101,10 +3101,21 @@ const saveProfile = (e) => {
                         .filter(Boolean)
                         .join(' ');
                 };
+                const hasCoreProfileData = (profile) => {
+                    if (!profile || typeof profile !== 'object') return false;
+                    return [
+                        String(profile.nombre || '').trim(),
+                        String(profile.nacionalidad || '').trim(),
+                        String(profile.ciudad || '').trim(),
+                        normalizeProfession(profile),
+                        String(profile.fechaNacimiento || '').trim(),
+                        String(profile.estaturaCm || '').trim()
+                    ].some(Boolean) || (Array.isArray(profile.fotos) && profile.fotos.some(Boolean));
+                };
 
                 return [...(perfiles || [])]
                     .filter((profile) => {
-                        if (!profile) return false;
+                        if (!hasCoreProfileData(profile)) return false;
                         if (!normalizedSearch) return true;
                         const haystack = [
                             String(profile.nombre || '').trim(),
