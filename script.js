@@ -25,12 +25,14 @@
             GENERAL: 'General'
         };
         const BATTLE_PHOTO_SLOTS = [
-            { id: 'pechos', label: 'Pechos', labels: ['P'] },
+            { id: 'perfil', label: 'Perfil', labels: [] },
             { id: 'colaPiernas', label: 'Cola/Piernas', labels: ['C'] },
-            { id: 'cuerpoCintura', label: 'Cuerpo/Cintura', labels: ['N', 'B'] },
+            { id: 'pechos', label: 'Pechos', labels: ['P'] },
+            { id: 'cuerpoCintura', label: 'Cintura/Cuerpo', labels: ['N', 'B'] },
             { id: 'sensualidad', label: 'Sensualidad', labels: ['E', 'S'] }
         ];
         const BATTLE_ARENA_TO_SLOT = {
+            perfil: 'perfil',
             pecho: 'pechos',
             pechos: 'pechos',
             cola: 'colaPiernas',
@@ -269,6 +271,85 @@
                 </html>
             `);
             popup.document.close();
+        };
+        const MultimediaModal = ({
+            isOpen = false,
+            profile = null,
+            onClose = () => {}
+        }) => {
+            const [isGalleryOpen, setIsGalleryOpen] = useState(true);
+            const [isTopOpen, setIsTopOpen] = useState(true);
+
+            useEffect(() => {
+                if (!isOpen) return;
+                setIsGalleryOpen(true);
+                setIsTopOpen(true);
+            }, [isOpen, profile?.firebaseId]);
+
+            if (!isOpen || !profile) return null;
+
+            const galleryItems = Array.isArray(profile?.galeria?.fotos)
+                ? profile.galeria.fotos
+                    .map((item) => normalizeGalleryItem(item, 'image'))
+                    .filter((item) => item.url)
+                : [];
+            const topScores = Object.entries(profile?.puntuaciones || {})
+                .map(([label, value]) => ({ label, value: Number(value) || 0 }))
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 5);
+
+            return (
+                <div
+                    className="fixed inset-0 z-[180] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm px-4 py-8"
+                    onClick={onClose}
+                    role="presentation"
+                >
+                    <section
+                        className="gothic-frame surface-panel surface-panel--neon rounded-[2rem] p-6 md:p-8 w-full max-w-5xl max-h-[90vh] overflow-y-auto relative"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Multimedia del personaje"
+                    >
+                        <button type="button" onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full border border-cyan-200/35 bg-slate-900/80 text-slate-100">✕</button>
+                        <h2 className="font-title text-center text-3xl md:text-4xl text-white uppercase tracking-wide">Multimedia</h2>
+                        <p className="text-center text-cyan-100/80 text-xs uppercase tracking-[0.2em] mt-2">{profile?.nombre || 'Personaje'}</p>
+
+                        <div className="mt-6 space-y-4">
+                            <article className="surface-panel rounded-2xl border border-cyan-200/20">
+                                <button type="button" onClick={() => setIsGalleryOpen((prev) => !prev)} className="w-full px-4 py-3 text-left font-black uppercase tracking-wide flex items-center justify-between">
+                                    <span>Galería</span><span>{isGalleryOpen ? '−' : '+'}</span>
+                                </button>
+                                {isGalleryOpen && (
+                                    <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {galleryItems.length ? galleryItems.map((item, idx) => (
+                                            <div key={`${item.url}-${idx}`} className="rounded-xl overflow-hidden border border-slate-600/40 bg-slate-900/40">
+                                                <img src={item.url} alt={`Multimedia ${idx + 1}`} className="w-full h-36 object-cover" loading="lazy" />
+                                            </div>
+                                        )) : <p className="text-sm text-slate-300 col-span-full">Sin contenido en galería.</p>}
+                                    </div>
+                                )}
+                            </article>
+
+                            <article className="surface-panel rounded-2xl border border-cyan-200/20">
+                                <button type="button" onClick={() => setIsTopOpen((prev) => !prev)} className="w-full px-4 py-3 text-left font-black uppercase tracking-wide flex items-center justify-between">
+                                    <span>5 Principales</span><span>{isTopOpen ? '−' : '+'}</span>
+                                </button>
+                                {isTopOpen && (
+                                    <div className="px-4 pb-4 space-y-2">
+                                        {topScores.length ? topScores.map((item) => (
+                                            <div key={item.label} className="surface-panel rounded-xl px-3 py-2 flex items-center justify-between">
+                                                <span className="text-sm text-slate-200 uppercase">{item.label}</span>
+                                                <strong className="text-cyan-200">{item.value}</strong>
+                                            </div>
+                                        )) : <p className="text-sm text-slate-300">Sin puntajes cargados.</p>}
+                                    </div>
+                                )}
+                            </article>
+                        </div>
+                    </section>
+                </div>
+            );
         };
         const checkImageUrlIsBroken = async (url = '', {
             timeoutMs = 12000,
@@ -822,32 +903,22 @@
                     </button>
                 </div>
 
-                <div style="width:100%; margin-bottom: 20px; padding: 14px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.28); background: rgba(2,6,23,0.45); display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
+                <details open style="width:100%; margin-bottom: 20px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.28); background: rgba(2,6,23,0.45);">
+                    <summary style="cursor:pointer; list-style:none; padding: 12px 14px; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 900; color: #f8fafc;">
+                        5 Principales
+                    </summary>
+                    <div style="padding: 0 14px 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
                     ${BATTLE_PHOTO_SLOTS.map((slot) => {
                         const hasSelection = !!safeBattlePhotoPrefs[slot.id];
                         const canPickFromGallery = slot.id !== 'perfil';
                         return `
-                            <div style="border:1px solid rgba(71,85,105,0.65); border-radius:10px; padding:10px; background: rgba(15,23,42,0.75);">
+                            <div style="border:1px solid ${hasSelection ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.95)'}; border-radius:10px; padding:10px; background: rgba(15,23,42,0.75); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px ${hasSelection ? 'rgba(34,197,94,0.28)' : 'rgba(239,68,68,0.24)'};">
                                 <div style="font-size:10px; color:#f8fafc; font-weight:900; letter-spacing:0.12em; text-transform:uppercase;">${slot.label}</div>
-                                <div style="font-size:11px; color:${hasSelection ? '#86efac' : '#94a3b8'}; margin-top:6px;">${hasSelection ? 'Foto fija elegida' : 'Modo aleatorio'}</div>
-                                <div style="margin-top:8px; display:grid; gap:6px;">
-                                    <button
-                                        type="button"
-                                        onclick="event.stopPropagation(); openSlotActionModal('${slot.id}');"
-                                        style="width:100%; border:1px solid rgba(74,222,128,0.6); background: rgba(2,6,23,0.82); color:#dcfce7; border-radius:8px; padding:6px 8px; font-size:10px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;"
-                                    >
-                                        Elegir para slot
-                                    </button>
-                                    ${canPickFromGallery
-                                        ? `<button
-                                            type="button"
-                                            onclick="event.stopPropagation(); openSlotActionModal('${slot.id}', 'gallery');"
-                                            style="width:100%; border:1px solid rgba(125,211,252,0.6); background: rgba(2,6,23,0.82); color:#e2e8f0; border-radius:8px; padding:6px 8px; font-size:10px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;"
-                                        >
-                                            Elegir desde galería
-                                        </button>`
-                                        : `<button type="button" disabled style="width:100%; border:1px solid rgba(100,116,139,0.35); background: rgba(15,23,42,0.7); color:#64748b; border-radius:8px; padding:6px 8px; font-size:10px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; cursor:not-allowed;" title="No disponible para el slot perfil">Elegir desde galería</button>`
-                                    }
+                                <div style="font-size:11px; color:${hasSelection ? '#86efac' : '#fca5a5'}; margin-top:6px; font-weight:700;">
+                                    Estado: ${hasSelection ? 'Asignada' : 'No asignada'}
+                                </div>
+                                <div style="font-size:10px; color:${hasSelection ? '#86efac' : '#fca5a5'}; margin-top:4px;">
+                                    ${hasSelection ? '✅ Foto asignada' : '❌ Sin foto asignada'}
                                 </div>
                                 <button
                                     type="button"
@@ -859,7 +930,8 @@
                             </div>
                         `;
                     }).join('')}
-                </div>
+                    </div>
+                </details>
 
                 <div class="grid" id="galleryGrid">
                     ${fotosGaleria.length ? fotosGaleria.map((foto, index) => {
@@ -1296,8 +1368,12 @@
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [isEditingGalleryLabel, setIsEditingGalleryLabel] = useState(false);
             const [galleryLabelDraft, setGalleryLabelDraft] = useState('');
+            const [galleryUrlDraft, setGalleryUrlDraft] = useState('');
+            const [galleryEditorError, setGalleryEditorError] = useState('');
+            const [isSavingGalleryEditor, setIsSavingGalleryEditor] = useState(false);
             const [tallerSearchTerm, setTallerSearchTerm] = useState('');
             const [selectedTallerProfileId, setSelectedTallerProfileId] = useState('');
+            const [isMultimediaModalOpen, setIsMultimediaModalOpen] = useState(false);
             const [isBrokenGalleryModalOpen, setIsBrokenGalleryModalOpen] = useState(false);
             const [brokenGalleryMap, setBrokenGalleryMap] = useState({});
             const [brokenGalleryUrlDrafts, setBrokenGalleryUrlDrafts] = useState({});
@@ -2043,10 +2119,14 @@ const getInitialCatFormData = () => ({
                 if (!selectedGalleryPhoto) {
                     setIsEditingGalleryLabel(false);
                     setGalleryLabelDraft('');
+                    setGalleryUrlDraft('');
+                    setGalleryEditorError('');
                     return;
                 }
                 setIsEditingGalleryLabel(false);
                 setGalleryLabelDraft(selectedGalleryPhoto.label || '');
+                setGalleryUrlDraft(selectedGalleryPhoto.url || '');
+                setGalleryEditorError('');
             }, [selectedGalleryPhoto]);
 
             useEffect(() => {
@@ -2200,6 +2280,7 @@ const getInitialCatFormData = () => ({
             const openGalleryViewer = (index, autoplay = false) => {
                 setSelectedGalleryIndex(index);
                 setIsGalleryPlaying(autoplay);
+                setIsEditingGalleryLabel(true);
             };
             const addCharacterToGallerySelection = (bucketId) => {
                 if (!bucketId) return;
@@ -2227,7 +2308,26 @@ const getInitialCatFormData = () => ({
             const showPreviousGalleryPhoto = () => setSelectedGalleryIndex((current) => clampIndex((current ?? 0) - 1, filteredGalleryPhotos.length));
             const saveSelectedGalleryLabel = async () => {
                 if (!selectedGalleryPhoto?.profileId || !selectedGalleryPhoto?.sourceTag || !Number.isInteger(selectedGalleryPhoto?.sourceIndex)) return;
+                const normalizedUrl = (galleryUrlDraft || '').trim();
+                if (!normalizedUrl) {
+                    setGalleryEditorError('La URL no puede estar vacía.');
+                    return;
+                }
+                if (isBlockedMediaUrl(normalizedUrl) || !getSafeImageSrc(normalizedUrl, '')) {
+                    setGalleryEditorError('La URL está bloqueada o no es válida.');
+                    return;
+                }
                 try {
+                    setIsSavingGalleryEditor(true);
+                    setGalleryEditorError('');
+                    if (normalizedUrl !== selectedGalleryPhoto.url) {
+                        await updateGalleryItemUrl({
+                            profileId: selectedGalleryPhoto.profileId,
+                            sourceTag: selectedGalleryPhoto.sourceTag,
+                            sourceIndex: selectedGalleryPhoto.sourceIndex,
+                            url: normalizedUrl
+                        });
+                    }
                     await updateGalleryItemLabel({
                         profileId: selectedGalleryPhoto.profileId,
                         sourceTag: selectedGalleryPhoto.sourceTag,
@@ -2236,7 +2336,10 @@ const getInitialCatFormData = () => ({
                     });
                     setIsEditingGalleryLabel(false);
                 } catch (error) {
+                    setGalleryEditorError('No se pudo guardar la edición del ítem.');
                     console.error('Error al actualizar etiqueta de la multimedia:', error);
+                } finally {
+                    setIsSavingGalleryEditor(false);
                 }
             };
             const handleBrokenDraftChange = (photoId, nextUrl) => {
@@ -3605,7 +3708,7 @@ const saveProfile = (e) => {
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                openSimpleTitleWindow('MULTIMEDIA');
+                                                                setIsMultimediaModalOpen(true);
                                                             }}
                                                             className="btn-metal py-3 rounded-xl text-[11px] font-black tracking-wide uppercase"
                                                         >
@@ -3618,6 +3721,11 @@ const saveProfile = (e) => {
                                     </section>
                                 </div>
                             )}
+                            <MultimediaModal
+                                isOpen={isMultimediaModalOpen}
+                                profile={selectedTallerProfile}
+                                onClose={() => setIsMultimediaModalOpen(false)}
+                            />
                         </div>
                     )}
 
@@ -4289,6 +4397,13 @@ const saveProfile = (e) => {
                             <div className="flex items-center justify-start sm:justify-end gap-2">
                                 {isEditingGalleryLabel ? (
                                     <>
+                                        <input
+                                            type="url"
+                                            value={galleryUrlDraft}
+                                            onChange={(event) => setGalleryUrlDraft(event.target.value)}
+                                            placeholder="https://..."
+                                            className="min-w-[260px] bg-slate-900 border theme-border-secondary rounded-lg px-2 py-1 text-[10px] font-bold tracking-[0.04em] text-white focus:outline-none focus:border-[var(--metal-gold)]"
+                                        />
                                         <select
                                             value={galleryLabelDraft}
                                             onChange={(event) => setGalleryLabelDraft(event.target.value)}
@@ -4302,14 +4417,17 @@ const saveProfile = (e) => {
                                         <button
                                             type="button"
                                             onClick={saveSelectedGalleryLabel}
+                                            disabled={isSavingGalleryEditor}
                                             className="px-2 py-1 rounded-lg border theme-border-secondary bg-slate-900 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--metal-gold)] hover:border-[var(--metal-gold)] transition-all"
                                         >
-                                            Guardar
+                                            {isSavingGalleryEditor ? 'Guardando...' : 'Guardar'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 setGalleryLabelDraft(selectedGalleryPhoto?.label || '');
+                                                setGalleryUrlDraft(selectedGalleryPhoto?.url || '');
+                                                setGalleryEditorError('');
                                                 setIsEditingGalleryLabel(false);
                                             }}
                                             className="px-2 py-1 rounded-lg border theme-border-secondary bg-slate-900 text-[10px] font-black uppercase tracking-[0.14em] text-slate-300 hover:text-white transition-all"
@@ -4327,6 +4445,9 @@ const saveProfile = (e) => {
                                         <span className="text-xs leading-none">✏️</span>
                                         <span>{selectedGalleryPhoto?.label || 'Sin etiqueta'}</span>
                                     </button>
+                                )}
+                                {isEditingGalleryLabel && galleryEditorError && (
+                                    <p className="text-[10px] font-bold tracking-[0.04em] text-rose-300">{galleryEditorError}</p>
                                 )}
                             </div>
                         </div>
