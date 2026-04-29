@@ -3396,6 +3396,41 @@ const saveProfile = (e) => {
                                                     <article className="taller-data-chip"><span>Ciudad</span><strong>{selectedTallerProfile.ciudad || 'No definida'}</strong></article>
                                                     <article className="taller-data-chip"><span>Estatura</span><strong>{selectedTallerProfile.estaturaCm ? `${selectedTallerProfile.estaturaCm} cm` : 'No informada'}</strong></article>
                                                 </div>
+                                                <div className="pt-2 space-y-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedTallerProfileId('');
+                                                            openProfileEditor(selectedTallerProfile);
+                                                        }}
+                                                        className="w-full btn-metal btn-metal--gold py-3 rounded-xl text-xs flex items-center justify-center gap-2"
+                                                    >
+                                                        <LucideIcon name="pencil" size={14} />
+                                                        Editar ficha completa
+                                                    </button>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedTallerProfileId('');
+                                                                openProfileEditor(selectedTallerProfile);
+                                                            }}
+                                                            className="btn-metal py-3 rounded-xl text-[11px] font-black tracking-wide uppercase"
+                                                        >
+                                                            Puntajes
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedTallerProfileId('');
+                                                                openProfileEditor(selectedTallerProfile);
+                                                            }}
+                                                            className="btn-metal py-3 rounded-xl text-[11px] font-black tracking-wide uppercase"
+                                                        >
+                                                            Multimedias
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </section>
