@@ -1188,6 +1188,7 @@
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [isEditingGalleryLabel, setIsEditingGalleryLabel] = useState(false);
             const [galleryLabelDraft, setGalleryLabelDraft] = useState('');
+            const [tallerSearchTerm, setTallerSearchTerm] = useState('');
             const [isBrokenGalleryModalOpen, setIsBrokenGalleryModalOpen] = useState(false);
             const [brokenGalleryMap, setBrokenGalleryMap] = useState({});
             const [brokenGalleryUrlDrafts, setBrokenGalleryUrlDrafts] = useState({});
@@ -3111,6 +3112,34 @@ const saveProfile = (e) => {
 
                 return base;
             }, [perfiles, activeTab, selectedCategory]);
+            const tallerProfiles = useMemo(() => {
+                const normalizedSearch = String(tallerSearchTerm || '').trim().toLowerCase();
+                const normalizeProfession = (profile) => {
+                    const professionFields = [profile?.profesion, profile?.profesiones];
+                    return professionFields
+                        .flatMap((value) => {
+                            if (Array.isArray(value)) return value;
+                            if (typeof value === 'string') return value.split(',');
+                            return [];
+                        })
+                        .map((entry) => String(entry || '').trim())
+                        .filter(Boolean)
+                        .join(' ');
+                };
+
+                return [...(perfiles || [])]
+                    .filter((profile) => {
+                        if (!profile) return false;
+                        if (!normalizedSearch) return true;
+                        const haystack = [
+                            String(profile.nombre || '').trim(),
+                            String(profile.nacionalidad || '').trim(),
+                            normalizeProfession(profile)
+                        ].join(' ').toLowerCase();
+                        return haystack.includes(normalizedSearch);
+                    })
+                    .sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es', { sensitivity: 'base' }));
+            }, [perfiles, tallerSearchTerm]);
             const battleScopeOptions = useMemo(() => {
                 if (!selectedBattleScope) return [];
                 return getBattleScopeOptions(perfiles, selectedBattleScope);
@@ -3283,7 +3312,59 @@ const saveProfile = (e) => {
 
                     {/* VISTA TALLER (VACÍA POR AHORA) */}
                     {activeTab === 'TALLER' && (
-                        <div></div>
+                        <div className="space-y-8 animate-in fade-in duration-500">
+                            <div className="space-y-2">
+                                <h2 className="neon-sign neon-sign--cyan text-4xl font-black italic text-white uppercase tracking-tighter">Taller</h2>
+                                <p className="text-xs font-bold text-[var(--metal-gold)] uppercase tracking-widest">Personajes en orden alfabético con búsqueda en vivo</p>
+                            </div>
+
+                            <div className="max-w-2xl">
+                                <label htmlFor="tallerSearchInput" className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-2">
+                                    Buscar por nombre, nacionalidad o profesión
+                                </label>
+                                <input
+                                    id="tallerSearchInput"
+                                    type="text"
+                                    value={tallerSearchTerm}
+                                    onChange={(event) => setTallerSearchTerm(event.target.value)}
+                                    placeholder="Ej: Argentina, Modelo, Lucía..."
+                                    className="w-full rounded-2xl border border-cyan-200/30 bg-slate-950/70 px-5 py-3 text-sm text-slate-100 outline-none transition-all focus:border-cyan-300/70 focus:shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                                {tallerProfiles.map((p) => {
+                                    const profKey = p.profesion?.toUpperCase() || 'DEFAULT';
+                                    const neonClass = (typeof neonColors !== 'undefined' && neonColors[profKey]) ? neonColors[profKey] : { color: '#06b6d4', sombra: 'rgba(6,182,212,0.5)' };
+                                    return (
+                                        <div key={p.firebaseId || p.nombre} className="profile-card rounded-2xl p-4 relative overflow-hidden">
+                                            <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 bg-slate-900/70">
+                                                <img
+                                                    src={p.fotos?.[0] || 'https://via.placeholder.com/400x500'}
+                                                    alt={p.nombre || 'Personaje'}
+                                                    className="w-full h-full object-cover"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-wide truncate">{p.nombre || 'Sin nombre'}</h3>
+                                            <p className="text-xs text-slate-300 truncate">{p.nacionalidad || 'Nacionalidad no definida'}</p>
+                                            <p
+                                                className="text-[10px] uppercase font-bold tracking-widest mt-2 truncate"
+                                                style={{ color: neonClass.color, textShadow: `0 0 12px ${neonClass.sombra}` }}
+                                            >
+                                                {p.profesion || 'Profesión no definida'}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {!tallerProfiles.length && (
+                                <div className="rounded-2xl border border-slate-500/30 bg-slate-900/50 px-6 py-8 text-center text-sm text-slate-300">
+                                    No hay personajes que coincidan con la búsqueda.
+                                </div>
+                            )}
+                        </div>
                     )}
 
 
