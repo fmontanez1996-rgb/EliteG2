@@ -4826,7 +4826,6 @@ const saveProfile = (e) => {
             )}
         </div>
     )}
-</div>
                     </main>
                     {isModalOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
