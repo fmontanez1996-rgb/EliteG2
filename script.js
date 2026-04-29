@@ -1485,7 +1485,7 @@ const getInitialCatFormData = () => ({
                 if (window.lucide) {
                     window.lucide.createIcons();
                 }
-            }, [activeTab, isModalOpen, isCatModalOpen, perfiles, selectedCategory, filters, categorias]);
+            }, [activeTab, isModalOpen, isCatModalOpen, perfiles, selectedCategory, categorias]);
 
             useEffect(() => {
                 if (galleryWindowRef.current && !galleryWindowRef.current.closed && editingId) {
