@@ -25,12 +25,14 @@
             GENERAL: 'General'
         };
         const BATTLE_PHOTO_SLOTS = [
-            { id: 'pechos', label: 'Pechos', labels: ['P'] },
+            { id: 'perfil', label: 'Perfil', labels: [] },
             { id: 'colaPiernas', label: 'Cola/Piernas', labels: ['C'] },
-            { id: 'cuerpoCintura', label: 'Cuerpo/Cintura', labels: ['N', 'B'] },
+            { id: 'pechos', label: 'Pechos', labels: ['P'] },
+            { id: 'cuerpoCintura', label: 'Cintura/Cuerpo', labels: ['N', 'B'] },
             { id: 'sensualidad', label: 'Sensualidad', labels: ['E', 'S'] }
         ];
         const BATTLE_ARENA_TO_SLOT = {
+            perfil: 'perfil',
             pecho: 'pechos',
             pechos: 'pechos',
             cola: 'colaPiernas',
@@ -820,13 +822,22 @@
                     </button>
                 </div>
 
-                <div style="width:100%; margin-bottom: 20px; padding: 14px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.28); background: rgba(2,6,23,0.45); display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
+                <details open style="width:100%; margin-bottom: 20px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.28); background: rgba(2,6,23,0.45);">
+                    <summary style="cursor:pointer; list-style:none; padding: 12px 14px; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 900; color: #f8fafc;">
+                        5 Principales
+                    </summary>
+                    <div style="padding: 0 14px 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
                     ${BATTLE_PHOTO_SLOTS.map((slot) => {
                         const hasSelection = !!safeBattlePhotoPrefs[slot.id];
                         return `
-                            <div style="border:1px solid rgba(71,85,105,0.65); border-radius:10px; padding:10px; background: rgba(15,23,42,0.75);">
+                            <div style="border:1px solid ${hasSelection ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.95)'}; border-radius:10px; padding:10px; background: rgba(15,23,42,0.75); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px ${hasSelection ? 'rgba(34,197,94,0.28)' : 'rgba(239,68,68,0.24)'};">
                                 <div style="font-size:10px; color:#f8fafc; font-weight:900; letter-spacing:0.12em; text-transform:uppercase;">${slot.label}</div>
-                                <div style="font-size:11px; color:${hasSelection ? '#86efac' : '#94a3b8'}; margin-top:6px;">${hasSelection ? 'Foto fija elegida' : 'Modo aleatorio'}</div>
+                                <div style="font-size:11px; color:${hasSelection ? '#86efac' : '#fca5a5'}; margin-top:6px; font-weight:700;">
+                                    Estado: ${hasSelection ? 'Asignada' : 'No asignada'}
+                                </div>
+                                <div style="font-size:10px; color:${hasSelection ? '#86efac' : '#fca5a5'}; margin-top:4px;">
+                                    ${hasSelection ? '✅ Foto asignada' : '❌ Sin foto asignada'}
+                                </div>
                                 <button
                                     type="button"
                                     onclick="event.stopPropagation(); window.opener.postMessage({type: 'CLEAR_BATTLE_PHOTO_PREF', id: '${editingId}', slotId: '${slot.id}'}, '*');"
@@ -837,7 +848,8 @@
                             </div>
                         `;
                     }).join('')}
-                </div>
+                    </div>
+                </details>
 
                 <div class="grid" id="galleryGrid">
                     ${fotosGaleria.length ? fotosGaleria.map((foto, index) => {
