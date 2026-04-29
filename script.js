@@ -3262,20 +3262,14 @@ const saveProfile = (e) => {
                     )}
 
                     <main className="flex-1 flex flex-col overflow-hidden bg-[#020617] stone-wall-surface relative">
-                        <header className="hud-frame hud-frame--header h-24 panel-frosted stone-wall-surface border-b theme-border-secondary flex items-center px-12 justify-between z-10 flex-shrink-0 relative">
-                            <div className="corner-ember-glow corner-ember-glow--left corner-ember-glow--top" aria-hidden="true"></div>
-                            <div className="corner-ember-glow corner-ember-glow--right corner-ember-glow--top" aria-hidden="true"></div>
-                            <div className="flex items-center gap-4 w-full max-w-xl">
-                                <button
-                                    onClick={() => setIsSidebarOpen(prev => !prev)}
-                                    className="btn-metal btn-metal--silver rounded-full p-3 text-slate-900 flex-shrink-0"
-                                    aria-label={isSidebarOpen ? 'Replegar menú lateral' : 'Desplegar menú lateral'}
-                                    title={isSidebarOpen ? 'Replegar menú lateral' : 'Desplegar menú lateral'}
-                                >
-                                    <LucideIcon name={isSidebarOpen ? 'panel-left-close' : 'panel-left-open'} size={18} />
-                                </button>
-                            </div>
-                        </header>
+                        <button
+                            onClick={() => setIsSidebarOpen(prev => !prev)}
+                            className="sidebar-screen-toggle btn-metal btn-metal--silver rounded-full text-slate-900"
+                            aria-label={isSidebarOpen ? 'Replegar menú lateral' : 'Desplegar menú lateral'}
+                            title={isSidebarOpen ? 'Replegar menú lateral' : 'Desplegar menú lateral'}
+                        >
+                            <LucideIcon name={isSidebarOpen ? 'panel-left-close' : 'panel-left-open'} size={12} />
+                        </button>
 
                         <div className="hud-section flex-1 overflow-y-auto p-12 relative z-10 stone-wall-surface">
                             <div className="corner-ember-glow corner-ember-glow--left corner-ember-glow--top" aria-hidden="true"></div>
