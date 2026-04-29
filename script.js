@@ -1173,9 +1173,6 @@
             const [sortBy, setSortBy] = useState('promedio');
             const [sortDirection, setSortDirection] = useState('desc');
             const [scoreBreakdownModal, setScoreBreakdownModal] = useState({ isOpen: false, profile: null, category: null });
-            const [urlInput, setUrlInput] = useState('');
-            const [galleryLabel, setGalleryLabel] = useState(GALLERY_LABELS[0]);
-            const [galleryMediaType, setGalleryMediaType] = useState('image');
             const [galleryFilterLabel, setGalleryFilterLabel] = useState('INICIAL');
             const [galleryViewMode, setGalleryViewMode] = useState('GENERAL');
             const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(null);
@@ -1312,23 +1309,6 @@ const getInitialCatFormData = () => ({
                 return updatedItems;
             };
 
-            const submitGalleryImage = async ({ profileId = editingId, url = urlInput, label = galleryLabel, type = galleryMediaType, successMessage } = {}) => {
-                if (!profileId || !(url || '').trim()) return;
-
-                try {
-                    await addGalleryImage({ profileId, url, tag: type === 'video' ? 'videos' : 'fotos', label, type });
-                    setUrlInput('');
-                    setGalleryLabel(GALLERY_LABELS[0]);
-                    setGalleryMediaType('image');
-
-
-                    if (successMessage) {
-                        alert(successMessage);
-                    }
-                } catch (error) {
-                    console.error('Error al guardar archivo en galería:', error);
-                }
-            };
             const updateGalleryItemLabel = async ({ profileId, sourceTag, sourceIndex, label }) => {
                 if (!profileId || !sourceTag || !Number.isInteger(sourceIndex)) return;
                 const normalizedLabel = GALLERY_LABELS.includes(label) ? label : '';
@@ -1449,20 +1429,6 @@ const getInitialCatFormData = () => ({
                     setFormData(prev => ({ ...prev, fotos: [dataUrl] }));
                 } catch (error) {
                     console.error('Error al cargar foto de perfil local:', error);
-                } finally {
-                    event.target.value = '';
-                }
-            };
-            const handleLocalGalleryFileUpload = async (event) => {
-                const selectedFile = event.target.files?.[0];
-                if (!selectedFile) return;
-                try {
-                    const dataUrl = await readFileAsDataUrl(selectedFile);
-                    const inferredType = selectedFile.type && selectedFile.type.startsWith('video/') ? 'video' : 'image';
-                    setUrlInput(dataUrl);
-                    setGalleryMediaType(inferredType);
-                } catch (error) {
-                    console.error('Error al cargar archivo local de galería:', error);
                 } finally {
                     event.target.value = '';
                 }
@@ -4759,42 +4725,6 @@ const saveProfile = (e) => {
                     </div>
                 )}
             </div>
-            {editingId && urlInput.trim() && (
-                <div className="w-48">
-                    <p className="mb-2 text-[9px] font-black uppercase tracking-[0.3em] text-[var(--metal-gold)]/80">Preview galería</p>
-                    <div className="relative h-32 overflow-hidden rounded-[1.5rem] border border-[color:color-mix(in_srgb,var(--metal-gold)_40%,transparent)] bg-slate-950 shadow-[0_0_20px_rgba(34,211,238,0.15)]">
-                        {galleryMediaType === 'video' ? (() => {
-                            const embedInfo = getVideoEmbedInfo(urlInput);
-                            if (embedInfo) {
-                                return (
-                                    <div className="w-full h-full bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.28),_rgba(15,23,42,0.96))] flex flex-col items-center justify-center gap-2 text-center px-4">
-                                        <div className="w-10 h-10 rounded-full border border-[var(--metal-gold)]/40 bg-slate-950/70 flex items-center justify-center text-[color:color-mix(in_srgb,var(--metal-gold)_72%,white)] text-lg">▶</div>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white">{embedInfo.provider}</p>
-                                    </div>
-                                );
-                            }
-                            return <video src={urlInput} className="w-full h-full object-cover" muted playsInline preload="metadata" />;
-                        })() : <img src={getSafeImageSrc(urlInput, CRYING_EMOJI_FALLBACK)} className="w-full h-full object-cover" alt="Preview galería" onError={applyCryingEmojiFallback} />}
-                        {(() => {
-                            const labelStyle = getGalleryLabelStyle(galleryLabel);
-                            return (
-                                <div
-                                    className="absolute bottom-3 left-1/2 flex min-w-[3.25rem] -translate-x-1/2 items-center justify-center rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.35em] backdrop-blur-md"
-                                    style={{
-                                        background: labelStyle.bg,
-                                        borderColor: labelStyle.border,
-                                        color: labelStyle.text,
-                                        boxShadow: `0 0 14px ${labelStyle.glow}, 0 0 24px ${labelStyle.glow}`,
-                                        textShadow: `0 0 10px ${labelStyle.glow}`
-                                    }}
-                                >
-                                    {galleryLabel}
-                                </div>
-                            );
-                        })()}
-                    </div>
-                </div>
-            )}
         </div>
 
         {/* CAMPOS DE TEXTO */}
@@ -4847,52 +4777,6 @@ const saveProfile = (e) => {
                         className="w-full theme-surface-soft border border-dashed theme-border-secondary p-4 rounded-xl outline-none text-slate-200 font-semibold text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-500/20 file:px-3 file:py-2 file:text-cyan-200 file:font-black"
                     />
                 </div>
-
-                {editingId && (
-                    <div className="col-span-2 space-y-2">
-                        <label className="text-[9px] font-black text-slate-500 ml-4 uppercase">URL para sumar a la galería</label>
-                        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(180px,0.7fr)_minmax(190px,0.8fr)]">
-                            <input
-                                placeholder={galleryMediaType === 'video' ? "https://video.com/video.mp4 o https://youtube.com/..." : "https://imagen.com/galeria.jpg"}
-                                className="min-w-0 theme-surface-soft border theme-border-secondary p-5 rounded-xl outline-none focus:ring-2 focus:ring-[var(--glow-gold)] text-white font-bold text-xs"
-                                value={urlInput}
-                                onChange={e => setUrlInput(e.target.value)}
-                            />
-                            <select
-                                value={galleryMediaType}
-                                onChange={e => setGalleryMediaType(e.target.value)}
-                                className="w-full theme-surface-soft border theme-border-secondary px-5 py-4 rounded-xl outline-none focus:ring-2 focus:ring-[var(--glow-gold)] text-white font-black text-xs uppercase tracking-[0.25em]"
-                            >
-                                <option value="image">Imagen</option>
-                                <option value="video">Video</option>
-                            </select>
-                            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_minmax(210px,auto)]">
-                                <select
-                                    value={galleryLabel}
-                                    onChange={e => setGalleryLabel(e.target.value)}
-                                    className="w-full theme-surface-soft border theme-border-secondary px-5 py-4 rounded-xl outline-none focus:ring-2 focus:ring-[var(--glow-gold)] text-white font-black text-xs uppercase tracking-[0.25em]"
-                                >
-                                    {GALLERY_LABELS.map(label => (
-                                        <option key={label} value={label}>Etiqueta {label}</option>
-                                    ))}
-                                </select>
-                                <button
-                                    type="button"
-                                    onClick={() => submitGalleryImage({ successMessage: '¡Foto guardada! Sos un genio.' })}
-                                    className="btn-metal btn-metal--gold w-full sm:w-auto px-6 py-4 rounded-xl text-[10px] sm:min-w-[210px]"
-                                >
-                                    Guardar en galería
-                                </button>
-                            </div>
-                        </div>
-                        <input
-                            type="file"
-                            accept="image/*,video/*,.gif"
-                            onChange={handleLocalGalleryFileUpload}
-                            className="w-full theme-surface-soft border border-dashed theme-border-secondary p-4 rounded-xl outline-none text-slate-200 font-semibold text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-500/20 file:px-3 file:py-2 file:text-cyan-200 file:font-black"
-                        />
-                    </div>
-                )}
 
                 <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-500 ml-4 uppercase">Nacimiento</label>
