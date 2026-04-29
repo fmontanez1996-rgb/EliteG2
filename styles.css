@@ -249,6 +249,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .card-score-badge {
+    position: relative;
     background: color-mix(in srgb, var(--card-neon-color) 24%, rgba(2, 6, 23, 0.86) 76%);
     border-color: color-mix(in srgb, var(--card-neon-color) 50%, rgba(148, 163, 184, 0.25) 50%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
@@ -259,6 +260,54 @@ h1, h2, h3, h4, h5, h6,
     background: color-mix(in srgb, var(--card-neon-color) 34%, rgba(2, 6, 23, 0.74) 66%);
     box-shadow: 0 0 18px color-mix(in srgb, var(--card-neon-color) 58%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.22);
     transform: translateY(-1px);
+}
+
+.card-score-badge__value {
+    color: #ffffff;
+    transition: color 220ms ease, text-shadow 220ms ease;
+}
+
+.card-score-badge--fire .card-score-badge__value {
+    color: #ff4d2e;
+    text-shadow:
+        0 0 8px rgba(255, 90, 32, 0.95),
+        0 0 16px rgba(255, 35, 0, 0.85),
+        0 0 28px rgba(255, 190, 11, 0.65);
+}
+
+.card-score-badge__fire-emoji {
+    position: absolute;
+    top: -9px;
+    right: -8px;
+    font-size: 0.8rem;
+    filter: drop-shadow(0 0 5px rgba(255, 90, 32, 0.9));
+}
+
+.card-score-badge--diamond::after {
+    content: "💎";
+    position: absolute;
+    bottom: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    text-shadow: 0 0 7px rgba(125, 211, 252, 0.9);
+}
+
+.card-score-badge--gold {
+    background:
+        radial-gradient(circle at 20% 18%, rgba(255, 255, 240, 0.8) 0%, rgba(255, 255, 240, 0.22) 26%, transparent 52%),
+        linear-gradient(160deg, #fff6bf 0%, #ffd84d 28%, #e3a90e 62%, #8d5d00 100%);
+    border-color: #ffe082;
+    box-shadow:
+        0 0 18px rgba(255, 212, 59, 0.85),
+        0 0 35px rgba(255, 184, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.card-score-badge--gold .card-score-badge__value,
+.card-score-badge--gold span:first-child {
+    color: #2b1b00 !important;
+    text-shadow: 0 0 8px rgba(255, 240, 179, 0.7);
 }
 
 .card-footer-profession {
