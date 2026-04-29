@@ -3101,6 +3101,16 @@ const saveProfile = (e) => {
                 }
                 return Number(profile.puntuaciones?.[key] || 0);
             };
+            const getDisplayedRankingScore = (profile) => {
+                if (sortBy === 'promedio') return calcularPromedio(profile);
+                if (sortBy === 'Rostro') return getRostroScore(profile).toFixed(0);
+                if (sortBy === 'Cuerpo') return getCuerpoScore(profile).toFixed(0);
+                if (sortBy === 'Actitud') return getActitudScore(profile).toFixed(0);
+                if (CARACTERISTICAS.includes(sortBy)) {
+                    return Number(profile.puntuaciones?.[sortBy] || 0).toFixed(0);
+                }
+                return calcularPromedio(profile);
+            };
 
             const toggleSort = (key, defaultDirection = 'asc') => {
                 if (sortBy === key) {
@@ -4509,7 +4519,7 @@ const saveProfile = (e) => {
     <td className="px-8 py-5 text-right">
         <div className={`inline-block bg-slate-900 border px-4 py-2 rounded-xl transition-all duration-300 ${idx === 0 ? 'border-[#ffd700]/50 shadow-[0_0_15px_rgba(255,215,0,0.3)]' : idx === 1 ? 'border-[#c0c0c0]/50 shadow-[0_0_15px_rgba(192,192,192,0.3)]' : idx === 2 ? 'border-[#cd7f32]/50 shadow-[0_0_15px_rgba(205,127,50,0.3)]' : 'theme-border-secondary group-hover:border-[color:color-mix(in_srgb,var(--metal-gold)_50%,transparent)]'}`}>
             <span className={`font-black leading-none ${idx === 0 ? 'text-gold' : idx === 1 ? 'text-silver' : idx === 2 ? 'text-bronze' : 'text-[var(--metal-gold)] text-lg'}`}>
-                {calcularPromedio(p)}
+                {getDisplayedRankingScore(p)}
             </span>
         </div>
     </td>
