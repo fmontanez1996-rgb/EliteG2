@@ -4483,22 +4483,26 @@ const saveProfile = (e) => {
                         <p className="text-xs text-slate-400">Seleccioná una opción para habilitar las batallas.</p>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {ARENAS.map((arenaName) => (
+                        {ARENAS.map((arenaName) => {
+                            const arenaKey = getArenaBattleKey(arenaName, selectedBattleScope, selectedBattleGroupKey);
+                            const isArenaCompleted = Boolean(arenaBattleState?.[arenaKey]?.isFinished);
+
+                            return (
                     <button
                         key={arenaName}
                         disabled={requiresBattleGroupSelection && !selectedBattleGroupKey}
                         onClick={() => {
                             setSelectedArena(arenaName);
-                            const arenaKey = getArenaBattleKey(arenaName, selectedBattleScope, selectedBattleGroupKey);
                             if (!arenaBattleState[arenaKey]) initArenaBattle(arenaName, selectedBattleScope, selectedBattleGroupKey);
                         }}
-                        className="solid-metal-ui battle-mode-card border rounded-2xl p-6 text-left transition-all disabled:opacity-45 disabled:cursor-not-allowed"
+                        className={`solid-metal-ui battle-mode-card border rounded-2xl p-6 text-left transition-all disabled:opacity-45 disabled:cursor-not-allowed ${isArenaCompleted ? 'battle-mode-card--completed' : ''}`}
                     >
-                        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">Item</p>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.28em] ${isArenaCompleted ? 'text-emerald-100/90' : 'text-slate-500'}`}>Item</p>
                         <h3 className="font-black italic text-white mt-2">{arenaName}</h3>
+                        {isArenaCompleted && <p className="battle-mode-card__status mt-4">Completada</p>}
                     </button>
-                        ))}
-                    </div>
+                            );
+                        })}                    </div>
                 </div>
             )}
         </div>
