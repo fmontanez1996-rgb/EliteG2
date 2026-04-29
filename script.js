@@ -895,6 +895,8 @@
                     <select id="nuevaFotoEtiqueta" style="width: 100%; padding: 12px; margin-top: 15px; background: #020617; border: 1px solid rgba(71,85,105,0.92); color: #e2e8f0; border-radius: 8px; outline: none; box-shadow: inset 0 1px 0 rgba(148,163,184,0.18);">
                         ${GALLERY_LABELS.map(label => `<option value="${label}">Etiqueta ${label}</option>`).join('')}
                     </select>
+                    <input type="hidden" id="slotSelectionId" value="">
+                    <p id="slotGalleryHint" style="display:none; margin:10px 0 0; font-size:11px; color:#93c5fd;">Tip: para “Elegir desde galería” también podés tocar los chips de slot sobre cada imagen.</p>
                     <button onclick="addMediaFromModal()"
                         style="margin-top: 15px; width: 100%; padding: 10px; background: linear-gradient(180deg, rgba(14,116,144,0.95), rgba(8,47,73,0.95)); color: #ecfeff; border: 1px solid rgba(103,232,249,0.9); border-radius: 8px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; box-shadow: 0 0 14px rgba(34,211,238,0.4);">
                         Guardar
@@ -908,6 +910,7 @@
                     <div style="padding: 0 14px 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
                     ${BATTLE_PHOTO_SLOTS.map((slot) => {
                         const hasSelection = !!safeBattlePhotoPrefs[slot.id];
+                        const canPickFromGallery = slot.id !== 'perfil';
                         return `
                             <div style="border:1px solid ${hasSelection ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.95)'}; border-radius:10px; padding:10px; background: rgba(15,23,42,0.75); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px ${hasSelection ? 'rgba(34,197,94,0.28)' : 'rgba(239,68,68,0.24)'};">
                                 <div style="font-size:10px; color:#f8fafc; font-weight:900; letter-spacing:0.12em; text-transform:uppercase;">${slot.label}</div>
@@ -1059,20 +1062,47 @@
                     const viewerNextButton = document.getElementById('viewerNext');
                     const viewerPlayToggleButton = document.getElementById('viewerPlayToggle');
                     const viewerRandomToggleButton = document.getElementById('viewerRandomToggle');
+                    const VALID_FILE_MIME_PREFIXES = ['image/', 'video/'];
+                    const VALID_FILE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm', 'ogg', 'mov', 'm4v'];
                     let currentViewerIndex = 0;
                     let viewerAutoplay = false;
                     let viewerRandom = false;
                     let viewerAutoplayTimeout = null;
+                    let activeSlotSelectionId = '';
+
+                    function isAllowedFileType(file) {
+                        if (!file) return false;
+                        const mime = String(file.type || '').toLowerCase();
+                        const ext = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+                        return VALID_FILE_MIME_PREFIXES.some((prefix) => mime.startsWith(prefix)) || VALID_FILE_EXTENSIONS.includes(ext);
+                    }
+
+                    function openSlotActionModal(slotId, mode = '') {
+                        activeSlotSelectionId = slotId || '';
+                        const modal = document.getElementById('miModal');
+                        const galleryHint = document.getElementById('slotGalleryHint');
+                        const slotInput = document.getElementById('slotSelectionId');
+                        if (slotInput) slotInput.value = activeSlotSelectionId;
+                        if (galleryHint) {
+                            galleryHint.style.display = mode === 'gallery' && slotId !== 'perfil' ? 'block' : 'none';
+                        }
+                        if (modal) modal.style.display = 'block';
+                    }
 
                     function resetAddMediaModalFields() {
                         const urlInput = document.getElementById('nuevaFotoUrl');
                         const localInput = document.getElementById('nuevoArchivoLocal');
                         const labelInput = document.getElementById('nuevaFotoEtiqueta');
                         const mediaTypeInput = document.getElementById('nuevoArchivoTipo');
+                        const slotInput = document.getElementById('slotSelectionId');
                         if (urlInput) urlInput.value = '';
                         if (localInput) localInput.value = '';
                         if (labelInput) labelInput.value = '${GALLERY_LABELS[0]}';
                         if (mediaTypeInput) mediaTypeInput.value = 'image';
+                        if (slotInput) slotInput.value = '';
+                        const galleryHint = document.getElementById('slotGalleryHint');
+                        if (galleryHint) galleryHint.style.display = 'none';
+                        activeSlotSelectionId = '';
                     }
 
                     function addMediaFromModal() {
@@ -1084,15 +1114,23 @@
                         const selectedFile = localInput?.files?.[0];
                         const mediaType = mediaTypeInput?.value || 'image';
                         const label = labelInput?.value || '${GALLERY_LABELS[0]}';
+                        const slotSelectionId = activeSlotSelectionId || document.getElementById('slotSelectionId')?.value || '';
 
                         const postMedia = (finalUrl, finalType) => {
                             if (!finalUrl) return;
                             window.opener.postMessage({ type: 'ADD_IMAGE', url: finalUrl, label, mediaType: finalType, id: '${editingId}' }, '*');
+                            if (slotSelectionId) {
+                                window.opener.postMessage({ type: 'SET_BATTLE_PHOTO_PREF_BY_URL', id: '${editingId}', slotId: slotSelectionId, url: finalUrl, mediaType: finalType, label }, '*');
+                            }
                             document.getElementById('miModal').style.display = 'none';
                             resetAddMediaModalFields();
                         };
 
                         if (selectedFile) {
+                            if (!isAllowedFileType(selectedFile)) {
+                                alert('Tipo de archivo no válido. Usá imagen o video.');
+                                return;
+                            }
                             const inferredType = selectedFile.type && selectedFile.type.startsWith('video/') ? 'video' : 'image';
                             const reader = new FileReader();
                             reader.onload = () => postMedia(String(reader.result || ''), inferredType);
@@ -1711,6 +1749,24 @@ const getInitialCatFormData = () => ({
                             batallaFotosPreferidas: {
                                 ...sanitizeBattlePhotoPreferences(prev.batallaFotosPreferidas),
                                 [slotId]: selectedItem.url
+                            }
+                        }));
+                    }
+
+                    if (event.data.type === 'SET_BATTLE_PHOTO_PREF_BY_URL') {
+                        const { id, slotId, url, mediaType, label } = event.data;
+                        const slotConfig = getBattleSlotById(slotId);
+                        const normalizedUrl = String(url || '').trim();
+                        if (!id || !slotConfig || !normalizedUrl) return;
+                        if (mediaType === 'video') return;
+                        if (!slotConfig.labels.includes(label)) return;
+                        const prefsRef = db.ref(`perfiles/${id}/batallaFotosPreferidas/${slotId}`);
+                        await prefsRef.set(normalizedUrl);
+                        setFormData(prev => ({
+                            ...prev,
+                            batallaFotosPreferidas: {
+                                ...sanitizeBattlePhotoPreferences(prev.batallaFotosPreferidas),
+                                [slotId]: normalizedUrl
                             }
                         }));
                     }
