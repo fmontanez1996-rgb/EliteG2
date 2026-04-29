@@ -3316,9 +3316,9 @@ const saveProfile = (e) => {
                 return sortDirection === 'asc' ? result : -result;
             });
             return (
-                <div className="app-space-theme flex h-screen overflow-hidden bg-[#020617] stone-wall-surface relative">
+                <div className="app-space-theme flex h-screen w-screen overflow-hidden bg-[#020617] stone-wall-surface relative">
                     {isSidebarOpen && (
-                    <aside className="hud-frame hud-frame--panel w-72 theme-surface-card stone-wall-surface border-r theme-border-secondary flex flex-col p-8 z-20 shadow-xl overflow-y-auto relative">
+                    <aside className="hud-frame hud-frame--panel w-72 shrink-0 theme-surface-card stone-wall-surface border-r theme-border-secondary flex flex-col p-8 z-20 shadow-xl overflow-y-auto relative">
                         <div className="corner-ember-glow corner-ember-glow--left corner-ember-glow--top" aria-hidden="true"></div>
                         <div className="mb-12 text-center flex-shrink-0">
                             <h1 className="neon-sign neon-sign--cyan text-5xl font-black text-[var(--metal-gold)] italic tracking-tighter leading-none">G2</h1>
@@ -3358,7 +3358,7 @@ const saveProfile = (e) => {
                     </aside>
                     )}
 
-                    <main className="flex-1 flex flex-col overflow-hidden bg-[#020617] stone-wall-surface relative">
+                    <main className="flex-1 min-w-0 w-full flex flex-col overflow-hidden bg-[#020617] stone-wall-surface relative">
                         <button
                             onClick={() => setIsSidebarOpen(prev => !prev)}
                             className="sidebar-screen-toggle btn-metal btn-metal--silver rounded-full text-slate-900"
@@ -3432,7 +3432,7 @@ const saveProfile = (e) => {
 
                             {selectedTallerProfile && (
                                 <div
-                                    className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm px-4 py-8"
+                                    className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm px-4 py-8"
                                     onClick={() => setSelectedTallerProfileId('')}
                                     role="presentation"
                                 >
@@ -4817,7 +4817,7 @@ const saveProfile = (e) => {
                 const categoryItems = SCORE_GROUP_TO_ARENAS[scoreBreakdownModal.category] || [];
                 return (
                     <div
-                        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[140] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
                         onClick={() => {
                             setScoreBreakdownModal({ isOpen: false, profile: null, category: null });
                             setScoreBreakdownItemDetail(null);
@@ -4966,7 +4966,7 @@ const saveProfile = (e) => {
                 const categoryEntries = Object.entries(SCORE_GROUP_TO_ARENAS);
                 return (
                     <div
-                        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[140] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
                         onClick={() => setScorePanelModal({ isOpen: false, profile: null })}
                     >
                         <div className="w-full max-w-3xl theme-surface-card border theme-border-secondary rounded-2xl p-6 space-y-6" onClick={(event) => event.stopPropagation()}>
@@ -5098,7 +5098,7 @@ const saveProfile = (e) => {
 </div>
                     </main>
                     {isModalOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
+                        <div className="fixed inset-0 z-[140] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
                             <div className="bg-[linear-gradient(180deg,#0b1222_0%,#050a16_100%)] w-full max-w-2xl rounded-3xl overflow-hidden shadow-[inset_0_1px_0_rgba(148,163,184,0.22),0_24px_60px_rgba(2,6,23,0.65)] border theme-border-secondary max-h-[90vh] flex flex-col relative animate-in zoom-in-95 duration-300">
                                <button
     onClick={() => setIsModalOpen(false)}
@@ -5304,7 +5304,7 @@ const saveProfile = (e) => {
                     )}
 
                     {isCatModalOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
+                        <div className="fixed inset-0 z-[140] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
                             <div className="bg-[linear-gradient(180deg,#0b1222_0%,#050a16_100%)] w-full max-w-5xl rounded-3xl overflow-hidden shadow-[inset_0_1px_0_rgba(148,163,184,0.22),0_24px_60px_rgba(2,6,23,0.65)] border theme-border-secondary max-h-[90vh] flex flex-col relative animate-in zoom-in-95 duration-300">
                                 <button
     type="button"
