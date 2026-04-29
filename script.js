@@ -3298,19 +3298,16 @@ const saveProfile = (e) => {
                         <div className="space-y-8 animate-in fade-in duration-500">
                             <div className="space-y-2">
                                 <h2 className="neon-sign neon-sign--cyan text-4xl font-black italic text-white uppercase tracking-tighter">Taller</h2>
-                                <p className="text-xs font-bold text-[var(--metal-gold)] uppercase tracking-widest">Personajes en orden alfabético con búsqueda en vivo</p>
                             </div>
 
                             <div className="max-w-2xl">
-                                <label htmlFor="tallerSearchInput" className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-2">
-                                    Buscar por nombre, nacionalidad o profesión
-                                </label>
                                 <input
                                     id="tallerSearchInput"
                                     type="text"
                                     value={tallerSearchTerm}
                                     onChange={(event) => setTallerSearchTerm(event.target.value)}
                                     placeholder="Ej: Argentina, Modelo, Lucía..."
+                                    aria-label="Buscar perfiles del taller"
                                     className="w-full rounded-2xl border border-cyan-200/30 bg-slate-950/70 px-5 py-3 text-sm text-slate-100 outline-none transition-all focus:border-cyan-300/70 focus:shadow-[0_0_20px_rgba(34,211,238,0.25)]"
                                 />
                             </div>
