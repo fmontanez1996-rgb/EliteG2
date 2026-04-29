@@ -1186,6 +1186,7 @@
             const [isEditingGalleryLabel, setIsEditingGalleryLabel] = useState(false);
             const [galleryLabelDraft, setGalleryLabelDraft] = useState('');
             const [tallerSearchTerm, setTallerSearchTerm] = useState('');
+            const [selectedTallerProfileId, setSelectedTallerProfileId] = useState('');
             const [isBrokenGalleryModalOpen, setIsBrokenGalleryModalOpen] = useState(false);
             const [brokenGalleryMap, setBrokenGalleryMap] = useState({});
             const [brokenGalleryUrlDrafts, setBrokenGalleryUrlDrafts] = useState({});
@@ -3115,6 +3116,10 @@ const saveProfile = (e) => {
                     })
                     .sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es', { sensitivity: 'base' }));
             }, [perfiles, tallerSearchTerm]);
+            const selectedTallerProfile = useMemo(
+                () => tallerProfiles.find((profile) => profile?.firebaseId === selectedTallerProfileId) || null,
+                [tallerProfiles, selectedTallerProfileId]
+            );
             const battleScopeOptions = useMemo(() => {
                 if (!selectedBattleScope) return [];
                 return getBattleScopeOptions(perfiles, selectedBattleScope);
@@ -3311,8 +3316,14 @@ const saveProfile = (e) => {
                                 {tallerProfiles.map((p) => {
                                     const profKey = p.profesion?.toUpperCase() || 'DEFAULT';
                                     const neonClass = (typeof neonColors !== 'undefined' && neonColors[profKey]) ? neonColors[profKey] : { color: '#06b6d4', sombra: 'rgba(6,182,212,0.5)' };
+                                    const isSelected = selectedTallerProfileId && selectedTallerProfileId === p.firebaseId;
                                     return (
-                                        <div key={p.firebaseId || p.nombre} className="profile-card rounded-2xl p-4 relative overflow-hidden">
+                                        <button
+                                            key={p.firebaseId || p.nombre}
+                                            type="button"
+                                            onClick={() => setSelectedTallerProfileId(p.firebaseId || '')}
+                                            className={`profile-card rounded-2xl p-4 relative overflow-hidden text-left transition-all ${isSelected ? 'taller-card--selected' : ''}`}
+                                        >
                                             <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 bg-slate-900/70">
                                                 <img
                                                     src={p.fotos?.[0] || 'https://via.placeholder.com/400x500'}
@@ -3329,7 +3340,7 @@ const saveProfile = (e) => {
                                             >
                                                 {p.profesion || 'Profesión no definida'}
                                             </p>
-                                        </div>
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -3338,6 +3349,37 @@ const saveProfile = (e) => {
                                 <div className="rounded-2xl border border-slate-500/30 bg-slate-900/50 px-6 py-8 text-center text-sm text-slate-300">
                                     No hay personajes que coincidan con la búsqueda.
                                 </div>
+                            )}
+
+                            {selectedTallerProfile && (
+                                <section className="taller-detail-panel rounded-[2rem] p-8 md:p-10 relative overflow-hidden">
+                                    <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px),1fr] gap-8 items-start">
+                                        <div className="taller-detail-avatar rounded-[1.8rem] overflow-hidden border border-cyan-200/35">
+                                            <img
+                                                src={selectedTallerProfile.fotos?.[0] || 'https://via.placeholder.com/500x700'}
+                                                alt={selectedTallerProfile.nombre || 'Perfil seleccionado'}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="space-y-6">
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-200/90 font-black">Ficha del personaje</p>
+                                                <h3 className="taller-detail-title text-3xl md:text-4xl font-black uppercase mt-2">
+                                                    {selectedTallerProfile.nombre || 'Sin nombre'}
+                                                </h3>
+                                                <p className="text-sm text-slate-300 mt-3">Perfil destacado del Taller con identidad metalizada y luces neón.</p>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <article className="taller-data-chip"><span>Nacionalidad</span><strong>{selectedTallerProfile.nacionalidad || 'No definida'}</strong></article>
+                                                <article className="taller-data-chip"><span>Edad</span><strong>{calcularEdad(selectedTallerProfile.fechaNacimiento)} años</strong></article>
+                                                <article className="taller-data-chip"><span>Nacimiento</span><strong>{selectedTallerProfile.fechaNacimiento || 'No informado'}</strong></article>
+                                                <article className="taller-data-chip"><span>Profesión</span><strong>{selectedTallerProfile.profesion || 'No definida'}</strong></article>
+                                                <article className="taller-data-chip"><span>Ciudad</span><strong>{selectedTallerProfile.ciudad || 'No definida'}</strong></article>
+                                                <article className="taller-data-chip"><span>Estatura</span><strong>{selectedTallerProfile.estaturaCm ? `${selectedTallerProfile.estaturaCm} cm` : 'No informada'}</strong></article>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
                             )}
                         </div>
                     )}
