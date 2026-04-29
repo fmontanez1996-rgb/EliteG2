@@ -270,6 +270,85 @@
             `);
             popup.document.close();
         };
+        const MultimediaModal = ({
+            isOpen = false,
+            profile = null,
+            onClose = () => {}
+        }) => {
+            const [isGalleryOpen, setIsGalleryOpen] = useState(true);
+            const [isTopOpen, setIsTopOpen] = useState(true);
+
+            useEffect(() => {
+                if (!isOpen) return;
+                setIsGalleryOpen(true);
+                setIsTopOpen(true);
+            }, [isOpen, profile?.firebaseId]);
+
+            if (!isOpen || !profile) return null;
+
+            const galleryItems = Array.isArray(profile?.galeria?.fotos)
+                ? profile.galeria.fotos
+                    .map((item) => normalizeGalleryItem(item, 'image'))
+                    .filter((item) => item.url)
+                : [];
+            const topScores = Object.entries(profile?.puntuaciones || {})
+                .map(([label, value]) => ({ label, value: Number(value) || 0 }))
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 5);
+
+            return (
+                <div
+                    className="fixed inset-0 z-[180] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm px-4 py-8"
+                    onClick={onClose}
+                    role="presentation"
+                >
+                    <section
+                        className="gothic-frame surface-panel surface-panel--neon rounded-[2rem] p-6 md:p-8 w-full max-w-5xl max-h-[90vh] overflow-y-auto relative"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Multimedia del personaje"
+                    >
+                        <button type="button" onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full border border-cyan-200/35 bg-slate-900/80 text-slate-100">✕</button>
+                        <h2 className="font-title text-center text-3xl md:text-4xl text-white uppercase tracking-wide">Multimedia</h2>
+                        <p className="text-center text-cyan-100/80 text-xs uppercase tracking-[0.2em] mt-2">{profile?.nombre || 'Personaje'}</p>
+
+                        <div className="mt-6 space-y-4">
+                            <article className="surface-panel rounded-2xl border border-cyan-200/20">
+                                <button type="button" onClick={() => setIsGalleryOpen((prev) => !prev)} className="w-full px-4 py-3 text-left font-black uppercase tracking-wide flex items-center justify-between">
+                                    <span>Galería</span><span>{isGalleryOpen ? '−' : '+'}</span>
+                                </button>
+                                {isGalleryOpen && (
+                                    <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {galleryItems.length ? galleryItems.map((item, idx) => (
+                                            <div key={`${item.url}-${idx}`} className="rounded-xl overflow-hidden border border-slate-600/40 bg-slate-900/40">
+                                                <img src={item.url} alt={`Multimedia ${idx + 1}`} className="w-full h-36 object-cover" loading="lazy" />
+                                            </div>
+                                        )) : <p className="text-sm text-slate-300 col-span-full">Sin contenido en galería.</p>}
+                                    </div>
+                                )}
+                            </article>
+
+                            <article className="surface-panel rounded-2xl border border-cyan-200/20">
+                                <button type="button" onClick={() => setIsTopOpen((prev) => !prev)} className="w-full px-4 py-3 text-left font-black uppercase tracking-wide flex items-center justify-between">
+                                    <span>5 Principales</span><span>{isTopOpen ? '−' : '+'}</span>
+                                </button>
+                                {isTopOpen && (
+                                    <div className="px-4 pb-4 space-y-2">
+                                        {topScores.length ? topScores.map((item) => (
+                                            <div key={item.label} className="surface-panel rounded-xl px-3 py-2 flex items-center justify-between">
+                                                <span className="text-sm text-slate-200 uppercase">{item.label}</span>
+                                                <strong className="text-cyan-200">{item.value}</strong>
+                                            </div>
+                                        )) : <p className="text-sm text-slate-300">Sin puntajes cargados.</p>}
+                                    </div>
+                                )}
+                            </article>
+                        </div>
+                    </section>
+                </div>
+            );
+        };
         const checkImageUrlIsBroken = async (url = '', {
             timeoutMs = 12000,
             retries = 1
@@ -1241,6 +1320,7 @@
             const [galleryLabelDraft, setGalleryLabelDraft] = useState('');
             const [tallerSearchTerm, setTallerSearchTerm] = useState('');
             const [selectedTallerProfileId, setSelectedTallerProfileId] = useState('');
+            const [isMultimediaModalOpen, setIsMultimediaModalOpen] = useState(false);
             const [isBrokenGalleryModalOpen, setIsBrokenGalleryModalOpen] = useState(false);
             const [brokenGalleryMap, setBrokenGalleryMap] = useState({});
             const [brokenGalleryUrlDrafts, setBrokenGalleryUrlDrafts] = useState({});
@@ -3530,7 +3610,7 @@ const saveProfile = (e) => {
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                openSimpleTitleWindow('MULTIMEDIA');
+                                                                setIsMultimediaModalOpen(true);
                                                             }}
                                                             className="btn-metal py-3 rounded-xl text-[11px] font-black tracking-wide uppercase"
                                                         >
@@ -3543,6 +3623,11 @@ const saveProfile = (e) => {
                                     </section>
                                 </div>
                             )}
+                            <MultimediaModal
+                                isOpen={isMultimediaModalOpen}
+                                profile={selectedTallerProfile}
+                                onClose={() => setIsMultimediaModalOpen(false)}
+                            />
                         </div>
                     )}
 
